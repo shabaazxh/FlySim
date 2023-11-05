@@ -60,6 +60,8 @@ class columnMajorMatrix
                 ret.coordinates[i] = 0.0f;
             }
         }
+
+        return ret;
     }
 
     static columnMajorMatrix Translate(const Cartesian3& vector)
@@ -199,6 +201,36 @@ class columnMajorMatrix
 
         return rotationMatrix;
     }
+
+    static columnMajorMatrix Rotate(float degrees, Cartesian3& axis)
+    {
+        float toRadians = DEG2RAD(degrees);
+        float cosTheta = std::cos(toRadians);
+        float sinTheta = std::sin(toRadians);
+
+        // Normalize the axis
+        axis = axis.unit();
+
+        columnMajorMatrix rotationMatrix = Identity();
+
+        // First column
+        rotationMatrix.coordinates[0] = cosTheta + axis.x * axis.x * (1 - cosTheta);
+        rotationMatrix.coordinates[1] = axis.x * axis.y * (1 - cosTheta) - axis.z * sinTheta;
+        rotationMatrix.coordinates[2] = axis.x * axis.z * (1 - cosTheta) + axis.y * sinTheta;
+
+        // Second column
+        rotationMatrix.coordinates[4] = axis.y * axis.x * (1 - cosTheta) + axis.z * sinTheta;
+        rotationMatrix.coordinates[5] = cosTheta + axis.y * axis.y * (1 - cosTheta);
+        rotationMatrix.coordinates[6] = axis.y * axis.z * (1 - cosTheta) - axis.x * sinTheta;
+
+        // Third column
+        rotationMatrix.coordinates[8] = axis.z * axis.x * (1 - cosTheta) - axis.y * sinTheta;
+        rotationMatrix.coordinates[9] = axis.z * axis.y * (1 - cosTheta) + axis.x * sinTheta;
+        rotationMatrix.coordinates[10] = cosTheta + axis.z * axis.z * (1 - cosTheta);
+
+        return rotationMatrix;
+    }
+
 
     static columnMajorMatrix constructView(const Cartesian3& camerpos, const Cartesian3& target, const Cartesian3& up)
     {	

@@ -60,36 +60,26 @@ SceneModel::SceneModel()
 //	rotation of 90 degrees CCW
 
 	// set the world to opengl matrix
-	WorldMatrix = columnMajorMatrix::Identity();
 	WorldMatrix = columnMajorMatrix::RotateX(90.0f);
-	//m_camera->GetViewMatrix() = Matrix4::Identity();
 
-	cameraPos = Cartesian3(-38500, 1000.0f, -3800);
-	cameraTarget = Cartesian3(0.0f,0.0f, -1.0f);
-	cameraUp = Cartesian3(0.0f,1.0f,0.0f);
 	planepos = Cartesian3(0,0,0);
 
-
-	cameraPos = Cartesian3(-271.4, 3634, -2855);
-	cameraTarget = cameraTarget.unit();	
-
-	m_camera = new Camera(Cartesian3(-271.4, 3634, -2855), Cartesian3(0.0f,0.0f, -1.0f));
-
-	//m_camera->GetViewMatrix() = columnMajorMatrix::constructView(cameraPos, cameraPos + cameraTarget, cameraUp);
-	objectModelMatrix = columnMajorMatrix::Identity();
-
-	pitch = 0.0f;
-	yaw = -90.0f;
-
+	m_camera = new Camera(Cartesian3(-271.4, 3634, -2855), Cartesian3(0.0f,0.0f, -1.0f), CameraMode::Pilot);
+    m_followCamera = new Camera(Cartesian3(0.0f, 100.0f, 0.0f), Cartesian3(0,0,0), CameraMode::Follow);
+	m_player = new Plane("./models/planeModel.tri", Cartesian3(0, 2000.0f, 0.0f), Cartesian3(-1.0f, 0.0f, 0.0f), 90.0f, PlaneRole::Controller);
+	// Plane(const char *fileName, const Cartesian3& startPosition, const Cartesian3& dir, float rotAngle,
+    //const PlaneRole& role)
 	float offset = 0.0f;
-	Plane* plane1 = new Plane("./models/planeModel.tri", Cartesian3(0.0f, 4000.0f, 0.0f), Cartesian3(-1.0f, 0.0f, 0.0f), 90.0f);
-	Plane* plane2 = new Plane("./models/planeModel.tri", Cartesian3(-9000.0f, 4000.0f, 0.0f), Cartesian3(1.0f, 0.0f, 0.0f), -90.0f);
+	Plane* plane1 = new Plane("./models/planeModel.tri", Cartesian3(0.0f, 4000.0f, 0.0f), Cartesian3(-1.0f, 0.0f, 0.0f), 90.0f, PlaneRole::Particle);
+	Plane* plane2 = new Plane("./models/planeModel.tri", Cartesian3(-9000.0f, 4000.0f, 0.0f), Cartesian3(1.0f, 0.0f, 0.0f), -90.0f, PlaneRole::Particle);
 	planes.push_back(plane1);
 	planes.push_back(plane2);
 
 	RandomDirections();
 
 	timer.start();
+
+	second = false;
 
 	} // constructor
 
@@ -107,83 +97,16 @@ SceneModel::~SceneModel()
 	}
 
 	delete m_camera;
+	delete m_followCamera;
 }
 
 void SceneModel::RandomDirections()
 {
-	srand(time(0));
-
 	for(int i = 0; i < RANDOM_AMOUNT; i++)
 	{	
-		// random angle within 45 degrees
-		float angle = (rand()/ (float)RAND_MAX) * (M_PI / 4.0f);
-
-		Cartesian3 point = Cartesian3(2.0*rand()/RAND_MAX - 1.0, 2.0*rand()/RAND_MAX - 1.0, 2.0*rand()/RAND_MAX - 1.0);
-		point = point.unit();
-		Cartesian3 dir = Cartesian3(point.x, sin(angle), sin(angle));
-		float speed = 60.0f + static_cast<float>(rand()) / (static_cast<float>(RAND_MAX/(300.0f-60.0f)));
-		dir = {dir.x * speed, dir.y * speed, dir.z * speed};
-
-		auto h = (speed * speed) * (sin(angle) * sin(angle)) / (2 * -9.81f);
-		 
-		//std::cout << "Altitude: " << h << ", Speed: " << speed << ", Angle: " << angle << std::endl;
-
 		auto newdir = RandomUnitVectorInUpwardsCone(45.0f, 0.0, 1.0f);
-		//newdir = {newdir.x * speed, newdir.y * speed, newdir.z * speed};
 		random_directions.push_back(newdir);
  	}
-}
-
-void SceneModel::calculateDirection()
-{
-	// Cartesian3 up = Cartesian3(0, 1.0f, 0);
-	// Cartesian3 x = Cartesian3(1.0f, 0.0f, 0.0f);
-	// x.Rotate(yaw, up);
-	// x = x.unit();
-
-	// Cartesian3 z = up.cross(x);
-	// z = z.unit();
-	// x.Rotate(pitch, z);
-
-	// cameraTarget = x;
-	// cameraTarget = cameraTarget.unit();
-
-	// cameraUp = cameraTarget.cross(z);
-	// cameraUp = cameraUp.unit();
-
-	// new 
-	// auto up = Cartesian3(0, 1, 0);
-	// auto forward = Cartesian3(1,0,0);
-	// forward.Rotate(yaw, up);
-	// forward = forward.unit();
-
-	// Cartesian3 r = up;
-	// r = r.cross(forward);
-	// r = r.unit();
-	// forward.Rotate(pitch, r);
-	
-	// Cartesian3 u = forward.cross(r);
-	// u = u.unit();
-
-	// cameraTarget = forward;
-	// cameraUp = u;
-
-	// if(pitch >= 89.0f) pitch = 89.0f;
-	// if(pitch <= -89.0f) pitch = -89.0f;
-
-	// Cartesian3 direction;
-	// direction.x = std::cos(toRadians(yaw)) * std::cos(toRadians(pitch));
-	// direction.y = std::sin(toRadians(pitch));
-	// direction.z = std::sin(toRadians(yaw)) * std::cos(toRadians(pitch));
-	// cameraTarget = direction.unit();
-
-	// auto right = Cartesian3(0.0f, 1.0f, 0.0f).cross(cameraTarget);
-	// right = right.unit();
-
-	// cameraUp = cameraTarget.cross(right);
-	// cameraUp = cameraUp.unit();
-
-	// m_camera->GetViewMatrix() = columnMajorMatrix::constructView(cameraPos, (cameraPos + cameraTarget), cameraUp);
 }
 
 // routine that updates the scene for the next frame
@@ -191,11 +114,31 @@ void SceneModel::Update()
 	{ // Update()
 
 		deltaTime = timer.restart() / 1000.0f;
+		if(m_camera->m_cameraMode == CameraMode::Pilot)
+		{
+			m_camera->SetPosition(m_player->position);
+			m_camera->SetDirection(m_player->direction);
+			m_camera->SetRotations(m_player->yaw, m_player->pitch, m_player->roll);
+		} else {
+			auto dist = m_player->position - m_camera->GetPosition();
+			dist = dist.unit();
 
-		//calculateDirection();
+			auto pos = m_player->position - Cartesian3(300, 0.0f, 300.0f);
+			pos.y = pos.y + 2000.0f;
+			m_camera->SetPosition(pos);
+			m_camera->SetDirection(dist);
+		}
+
+		if(second)
+		{
+			m_camera->m_cameraMode = CameraMode::Follow;
+		} else {
+			m_camera->m_cameraMode = CameraMode::Pilot;
+		}
+
 		m_camera->Update();
-		//m_camera->GetViewMatrix() = columnMajorMatrix::constructView(cameraPos, (cameraPos + cameraTarget), cameraUp);
-		planepos = Cartesian3(2.0f, 100.0f, 3.0f);
+		m_player->update(deltaTime, WorldMatrix, viewMatrix);
+		//planepos = Cartesian3(2.0f, 100.0f, 3.0f);
 		for(int i = 0; i < particles.size(); i++)
 		{
 			particles[i]->life -= 1.0f;
@@ -257,7 +200,6 @@ void SceneModel::Update()
 		for(int i = 0; i < planes.size(); i++)
 		{
 			planes[i]->update(deltaTime, WorldMatrix, m_camera->GetViewMatrix());
-			//cameraPos = planes[i]->position;
 		}
 
 		for(int i = 0; i < planes.size(); i++)
@@ -266,15 +208,18 @@ void SceneModel::Update()
 			{
 				if(planes[i]->isColliding(*planes[j]))
 				{
-					std::cout << "Plane collision!" << std::endl;
+					// std::cout << "Plane collision!" << std::endl;
 					// planes[i]->shouldRender = false;
 					// planes[j]->shouldRender = false;
 				}
 			}
 		}
 
-		//std::cout << "Camera pos: " << cameraPos << std::endl;
-
+		m_followCamera->SetPosition(Cartesian3(0, 0, 0));
+		auto dir = planepos - m_followCamera->GetPosition();
+		dir = dir.unit();
+		m_followCamera->SetDirection(dir);
+		
 	} // Update()
 
 // routine to tell the scene to render itself
@@ -322,14 +267,11 @@ void SceneModel::Render()
 	// actual render code goes here
 	// flip z in local space so positive z is up  so when we rotate 90 ccw from world matrix
 	// positive z points out of the screen	
-	auto groundMatrix = m_camera->GetViewMatrix() * WorldMatrix * columnMajorMatrix::Scale(Cartesian3(1, 1, -1));
+	columnMajorMatrix groundMatrix;
+	groundMatrix = m_camera->GetViewMatrix() * WorldMatrix * columnMajorMatrix::Scale(Cartesian3(1, 1, -1));
 	groundModel.Render(groundMatrix);
 
 	// translate, rotate, scale
-	auto forward = ((cameraTarget - cameraPos).unit()) * 14.0f;
-	float scale = 1.0f;
-
-	//std::cout << offset << std::endl;
 
 	// auto axis = Cartesian3(0.0f, 1.0f, 0.0f);
 	// Quaternion rotation(180.0f, axis);
@@ -339,30 +281,43 @@ void SceneModel::Render()
 	// columnMajorMatrix rot = result.ToRotationMatrix();
 //* columnMajorMatrix::RotateX(180.0f)
 
-//look matrix for plane?
-	
+
+	// Plane follow camera	
+	float scale = 1.0f;
 	Cartesian3 direction;
-	direction.x = std::cos(DEG2RAD(yaw)) * std::cos(DEG2RAD(pitch));
-	direction.y = std::sin(DEG2RAD(pitch));
-	direction.z = std::sin(DEG2RAD(yaw)) * std::cos(DEG2RAD(pitch));
+	direction.x = std::cos(DEG2RAD(m_camera->GetYaw())) * std::cos(DEG2RAD(m_camera->GetPitch()));
+	direction.y = std::sin(DEG2RAD(m_camera->GetPitch()));
+	direction.z = std::sin(DEG2RAD(m_camera->GetYaw())) * std::cos(DEG2RAD(m_camera->GetPitch()));
 	auto planeTarget = direction.unit();
 
-	auto right = Cartesian3(0.0f, 1.0f, 0.0f).cross(cameraTarget);
+	auto right = Cartesian3(0.0f, 1.0f, 0.0f).cross(m_camera->GetDirection());
 	right = right.unit();
 
-	auto planeUp = cameraTarget.cross(right);
-	planeUp = cameraUp.unit();
+	float distance = 2.0f;
 
-	auto rot = columnMajorMatrix::Look(cameraPos, (cameraPos + planeTarget), planeUp);
+	Cartesian3 offset = m_camera->GetPosition() + m_camera->GetDirection().unit() * distance;
 
-	objectModelMatrix = m_camera->GetViewMatrix() * columnMajorMatrix::Translate(cameraPos) *
-	rot *  WorldMatrix * 
+	auto planeUp = m_camera->GetDirection().cross(right);
+	planeUp = m_camera->GetUp().unit();
+
+	//m_camera->m_cameraMode = CameraMode::Follow;
+	m_camera->planepos = planepos;
+	m_camera->planedir = planeTarget;
+
+	auto planeRot = columnMajorMatrix::Look(offset, (offset + planeTarget), planeUp);
+
+	objectModelMatrix = m_camera->GetViewMatrix() * columnMajorMatrix::Translate(offset) *
+	planeRot * WorldMatrix * 
 	columnMajorMatrix::Scale(Cartesian3(scale, scale, scale));
 
 	glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, planeColour);
 	glMaterialfv(GL_FRONT, GL_SPECULAR, blackColour);
 	glMaterialfv(GL_FRONT, GL_EMISSION, blackColour);
-	planeModel.Render(objectModelMatrix);
+
+	auto m = m_camera->GetViewMatrix() * columnMajorMatrix::Translate(offset) * m_player->modelMatrix *
+	WorldMatrix * columnMajorMatrix::Scale(Cartesian3(scale, scale, scale));
+	m_player->planeModel.Render(m);
+	//planeModel.Render(objectModelMatrix);
 
 	glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, lavaBombColour);
 	glMaterialfv(GL_FRONT, GL_SPECULAR, blackColour);
@@ -384,11 +339,10 @@ void SceneModel::Render()
 			glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, particles[i]->lavaBombColour);
 			glMaterialfv(GL_FRONT, GL_SPECULAR, blackColour);
 			glMaterialfv(GL_FRONT, GL_EMISSION, blackColour);
-
+			
 			auto mat = m_camera->GetViewMatrix() * (particles[i]->modelMatrix * WorldMatrix);	
 			particles[i]->lavaBombModel.Render(particles[i]->modelMatrix);
 			
-
 			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 			glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, lavaBombColour2);
 			glMaterialfv(GL_FRONT, GL_SPECULAR, blackColour);

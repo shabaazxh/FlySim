@@ -64,21 +64,6 @@ class SceneModel
 	// routine to tell the scene to render itself
 	void Render();
 
-	float movement = 500.0f;
-	float rot = 6.0f;
-	float speed = 1.0f;
-	// adding pitch, yaw and has ruined the movement
-	void Forward() { cameraPos = cameraPos + movement * cameraTarget;}
-	void LeftTurn() {yaw -= rot; }
-	void RightTurn() {yaw += rot; }
-	void PitchUp() { pitch += rot; }
-	void PitchDown() { pitch -= rot; }
-	void Back() { cameraPos = cameraPos - movement * cameraTarget; }
-
-	void IncreaseSpeed() { movement >= 299.0f ? movement == movement : movement += 10.0f; std::cout << "Speed increased: " << movement << std::endl; }
-	void DecreaseSpeed() { movement <= 20.0f ? movement == movement : movement -= 10.0f; std::cout << "Speed decrease: " << movement << std::endl; }
-
-	void calculateDirection();
 	void reduce()
 	{
 		for(auto& plane : planes)
@@ -89,7 +74,13 @@ class SceneModel
 	void CreateParticles();
 	void RandomDirections();
 
+	void change()
+	{
+		second = second == false ? true : false;
+	}
+
 	Camera* m_camera;
+	Camera* m_followCamera;
 
 	columnMajorMatrix objectModelMatrix;
 	Cartesian3 planepos;
@@ -101,6 +92,10 @@ class SceneModel
 	int lastIndex = 0;
 	QElapsedTimer timer;
 	std::vector<Plane*> planes;
+
+	Plane* m_player;
+
+	bool second;
 	
 	}; // class SceneModel
 
