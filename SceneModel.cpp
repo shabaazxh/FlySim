@@ -33,8 +33,8 @@ const GLfloat planeRadius = 2.0;
 const GLfloat lavaBombRadius = 100.0;
 const Cartesian3 chaseCamVector(0.0, -2.0, 0.5);
 
+// Set up timers so we can incrementally spawn particles in the scene over time
 static auto startTime = std::chrono::high_resolution_clock::now();
-
 auto lastSpawnTime = std::chrono::high_resolution_clock::now() - std::chrono::seconds(5);
 
 // constructor
@@ -63,14 +63,13 @@ SceneModel::SceneModel(float x, float y, float z)
 	// Instantiate the camera, player and plane objects.
 	// Heap allocate to ensure they live until the end of the program
 	// Destructor will return all heap allocated memory for these objects
-	////-271.4, 3634, -2855
-	m_camera = new Camera(Cartesian3(-38500, 3634, -4000), Cartesian3(0.0f,0.0f, -1.0f), CameraMode::Pilot);
-	//-38500, 2000, -4000
-	m_player = new Plane("./models/planeModel.tri", Cartesian3(x, y, z), Cartesian3(-1.0f, 0.0f, 0.0f), 90.0f, 200.f, PlaneRole::Controller);
 
-	float offset = 0.0f;
-	Plane* plane1 = new Plane("./models/planeModel.tri", Cartesian3(0.0f, 4000.0f, 0.0f), Cartesian3(-1.0f, 0.0f, 0.0f), 90.0f, 86.0f, PlaneRole::Particle);
-	Plane* plane2 = new Plane("./models/planeModel.tri", Cartesian3(-9000.0f, 4000.0f, 0.0f), Cartesian3(1.0f, 0.0f, 0.0f), -90.0f, 86.0f, PlaneRole::Particle);
+	// Set up camera position can be anywhere since it will recalculate its position relative to the player plane 
+	m_camera = new Camera(Cartesian3(0.0f, 0.0f, 0.0f), Cartesian3(0.0f,0.0f, -1.0f), CameraMode::Pilot);
+	m_player = new Plane("./models/planeModel.tri", Cartesian3(x, y, z), 200.f, PlaneRole::Controller);
+
+	Plane* plane1 = new Plane("./models/planeModel.tri", Cartesian3(0.0f, 4000.0f, 0.0f), 344.0f, PlaneRole::Particle);
+	Plane* plane2 = new Plane("./models/planeModel.tri", Cartesian3(0.0f, 5000.0f, 0.0f), 344.0f, PlaneRole::Particle);
 	planes.push_back(plane1);
 	planes.push_back(plane2);
 
@@ -85,6 +84,7 @@ SceneModel::SceneModel(float x, float y, float z)
 	} // constructor
 
 
+// Release all heap allocated memory used 
 SceneModel::~SceneModel()
 {
 	for(int i = 0; i < particles.size(); i++)
@@ -124,6 +124,8 @@ void SceneModel::Update()
 			m_camera->SetCameraMode(CameraMode::Pilot);
 		}
 
+		// Set the correct variables for the camera depending on which mode the
+		// Camera is set to
 		if(m_camera->GetCameraMode() == CameraMode::Pilot)
 		{
 			m_camera->SetPosition(m_player->position);
@@ -139,9 +141,11 @@ void SceneModel::Update()
 			m_camera->SetDirection(dir);
 		}
 
+		// Update the camera and the player
 		m_camera->Update();
-		m_player->update(deltaTime, WorldMatrix, viewMatrix);
+		m_player->Update(deltaTime, WorldMatrix, viewMatrix);
 
+		// Update particles data over each frame to ensure the physics calculations are correct
 		for(int i = 0; i < particles.size(); i++)
 		{
 			particles[i]->Update(deltaTime, WorldMatrix, m_camera->GetViewMatrix());
@@ -157,12 +161,12 @@ void SceneModel::Update()
 				{
 					Cartesian3 pushDirection = particles[i]->GetPosition() - particles[j]->GetPosition();
 					pushDirection = pushDirection.unit();
-
 					float magnitude = 30.0f;
-
+					// If the particles collide, make them push in opposite directions
 					particles[i]->Push(pushDirection * magnitude);
 					particles[j]->Push(pushDirection * -magnitude);
 
+					// Also change their colour to red to indicate they've become hotter from colliding
 					particles[i]->SetColor(1.0f, 0.0f, 0.0f, 1.0f);
 					particles[j]->SetColor(1.0f, 0.0f, 0.0f, 1.0f);
 				}
@@ -191,7 +195,7 @@ void SceneModel::Update()
 
 		for(int i = 0; i < planes.size(); i++)
 		{
-			planes[i]->update(deltaTime, WorldMatrix, m_camera->GetViewMatrix());
+			planes[i]->Update(deltaTime, WorldMatrix, m_camera->GetViewMatrix());
 		}
 
 		// Check if the planes flying in the air are colliding with one another 
@@ -281,12 +285,25 @@ void SceneModel::Render()
 	glMaterialfv(GL_FRONT, GL_SPECULAR, blackColour);
 	glMaterialfv(GL_FRONT, GL_EMISSION, blackColour);
 
-	float scale = 1.0f;
-	float distance = 2.0f;
-	Cartesian3 offset = m_camera->GetPosition() + m_camera->GetDirection().unit() * distance;
-	auto m = m_camera->GetViewMatrix() * columnMajorMatrix::Translate(offset) * m_player->modelMatrix *
-	WorldMatrix * columnMajorMatrix::Scale(Cartesian3(scale, scale, scale));
-	m_player->planeModel.Render(m);
+	// If the third person camera is enabled, render some distance behind the plane
+	// otherwise the plane remains in First person mode
+	columnMajorMatrix playerMatrix;
+	if(m_camera->isThirdPerson())
+	{
+		float scale = 1.0f;
+		float distance = 10.0f;
+		Cartesian3 offset = m_camera->GetPosition() + m_camera->GetDirection().unit() * distance;
+		playerMatrix = m_camera->GetViewMatrix() * columnMajorMatrix::Translate(offset) * m_player->modelMatrix *
+		WorldMatrix * columnMajorMatrix::Scale(Cartesian3(scale, scale, scale));
+		m_player->planeModel.Render(playerMatrix);
+	} else {
+		float scale = 1.0f;
+		playerMatrix = m_camera->GetViewMatrix() * columnMajorMatrix::Translate(m_camera->GetPosition()) * m_player->modelMatrix *
+		WorldMatrix * columnMajorMatrix::Scale(Cartesian3(scale, scale, scale));
+		m_player->planeModel.Render(playerMatrix);
+	}
+
+	m_player->planeModel.Render(playerMatrix);
 
 	glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, lavaBombColour);
 	glMaterialfv(GL_FRONT, GL_SPECULAR, blackColour);
@@ -315,16 +332,6 @@ void SceneModel::Render()
 			
 			auto transformationMatrix = particles[i]->GetModelMatrix();
 			particles[i]->lavaBombModel.Render(transformationMatrix);
-			
-			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-			glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, lavaBombColour2);
-			glMaterialfv(GL_FRONT, GL_SPECULAR, blackColour);
-			glMaterialfv(GL_FRONT, GL_EMISSION, blackColour);
-
-			float scale = 1.1f; // scaled to 1.1 so we can see the collision shape
-			auto particleMatrix = particles[i]->GetModelMatrix();
-			auto sphereMatrix = particleMatrix * columnMajorMatrix::Scale(Cartesian3(scale, scale, scale));
-			particles[i]->Sphere.Render(sphereMatrix);
 
 			// Render child particles
 			for(auto& child : particles[i]->GetChildren())
@@ -355,7 +362,7 @@ void SceneModel::Render()
 
 	for(int i = 0; i < planes.size(); i++)
 	{
-		if(planes[i]->shouldRender)
+		if(planes[i]->shouldRender == true)
 		{
 			planes[i]->planeModel.Render(planes[i]->modelMatrix);
 

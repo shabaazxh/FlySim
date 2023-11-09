@@ -1114,8 +1114,8 @@ moc_FlightSimulatorWidget.cpp: FlightSimulatorWidget.h \
 		Matrix4.h \
 		Terrain.h \
 		Quaternion.h \
-		Particle.h \
 		Plane.h \
+		Particle.h \
 		Camera.h \
 		Random.h \
 		/opt/homebrew/lib/QtCore.framework/Headers/QElapsedTimer \
@@ -1162,8 +1162,8 @@ FlightSimulatorWidget.o: FlightSimulatorWidget.cpp FlightSimulatorWidget.h \
 		Matrix4.h \
 		Terrain.h \
 		Quaternion.h \
-		Particle.h \
 		Plane.h \
+		Particle.h \
 		Camera.h \
 		Random.h \
 		/opt/homebrew/lib/QtCore.framework/Headers/QElapsedTimer \
@@ -1194,8 +1194,8 @@ main.o: main.cpp FlightSimulatorWidget.h \
 		Matrix4.h \
 		Terrain.h \
 		Quaternion.h \
-		Particle.h \
 		Plane.h \
+		Particle.h \
 		Camera.h \
 		Random.h \
 		/opt/homebrew/lib/QtCore.framework/Headers/QElapsedTimer \
@@ -1207,10 +1207,19 @@ Matrix4.o: Matrix4.cpp Matrix4.h \
 		Homogeneous4.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o Matrix4.o Matrix4.cpp
 
-Particle.o: Particle.cpp 
+Particle.o: Particle.cpp Particle.h \
+		Matrix4.h \
+		Cartesian3.h \
+		Homogeneous4.h \
+		HomogeneousFaceSurface.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o Particle.o Particle.cpp
 
-Plane.o: Plane.cpp 
+Plane.o: Plane.cpp Plane.h \
+		Particle.h \
+		Matrix4.h \
+		Cartesian3.h \
+		Homogeneous4.h \
+		HomogeneousFaceSurface.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o Plane.o Plane.cpp
 
 Quaternion.o: Quaternion.cpp Quaternion.h \
@@ -1230,8 +1239,8 @@ SceneModel.o: SceneModel.cpp SceneModel.h \
 		Matrix4.h \
 		Terrain.h \
 		Quaternion.h \
-		Particle.h \
 		Plane.h \
+		Particle.h \
 		Camera.h \
 		Random.h \
 		/opt/homebrew/lib/QtCore.framework/Headers/QElapsedTimer \

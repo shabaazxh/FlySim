@@ -108,13 +108,16 @@ void FlightSimulatorWidget::keyPressEvent(QKeyEvent *event)
 			theScene->m_player->RollRight();
 			break;
 		case Qt::Key_Plus:
-			theScene->m_player->IncreaseSpeed(1000.0f);
+			theScene->m_player->IncreaseSpeed();
 			break;
 		case Qt::Key_Minus:
-			theScene->m_player->DecreaseSpeed(1000.0f);
+			theScene->m_player->DecreaseSpeed();
 			break;
 		case Qt::Key_V:
 			theScene->SwitchCamera();
+			break;
+		case Qt::Key_M:
+			theScene->m_camera->EnableThirdPerson();
 			break;
 		case Qt::Key_X:
 			exit(0);

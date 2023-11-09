@@ -46,25 +46,8 @@ class columnMajorMatrix
     }
     Homogeneous4 operator*(const Homogeneous4& v) const;
     columnMajorMatrix operator*(const columnMajorMatrix& other) const;
-
-    static columnMajorMatrix Identity()
-    {
-        columnMajorMatrix ret;
-
-        for(int i = 0; i < 16; i++)
-        {
-            if(i % 5 == 0)
-            {
-                ret.coordinates[i] = 1.0f;
-            } else 
-            {
-                ret.coordinates[i] = 0.0f;
-            }
-        }
-
-        return ret;
-    }
-
+ 
+    // Translation matrix to move objects around in the world
     static columnMajorMatrix Translate(const Cartesian3& vector)
     {
         columnMajorMatrix ret;
@@ -91,7 +74,7 @@ class columnMajorMatrix
 
         return ret;
     }
-
+    // Matrix to scale so we can scale objects
     static columnMajorMatrix Scale(const Cartesian3& scale)
     {
         columnMajorMatrix ret;
@@ -118,12 +101,12 @@ class columnMajorMatrix
 
         return ret;
     }
-
+    // Rotation around X axis
     static columnMajorMatrix RotateX(float degrees)
     {
         float toRadians = DEG2RAD(degrees);
 
-        columnMajorMatrix rotationMatrix = Identity();
+        columnMajorMatrix rotationMatrix;
         rotationMatrix.coordinates[0] = 1.0f;
         rotationMatrix.coordinates[1] = 0.0f;
         rotationMatrix.coordinates[2] = 0.0f;
@@ -146,7 +129,7 @@ class columnMajorMatrix
 
         return rotationMatrix;
     }
-
+    // Rotation around Y axis
     static columnMajorMatrix RotateY(float degrees)
     {
         float toRadians = DEG2RAD(degrees);
@@ -174,7 +157,7 @@ class columnMajorMatrix
 
         return rotationMatrix;
     }
-
+    // Rotation around Z axis
     static columnMajorMatrix RotateZ(float degrees)
     {
         float toRadians = DEG2RAD(degrees);
@@ -203,36 +186,7 @@ class columnMajorMatrix
         return rotationMatrix;
     }
 
-    static columnMajorMatrix Rotate(float degrees, Cartesian3& axis)
-    {
-        float toRadians = DEG2RAD(degrees);
-        float cosTheta = std::cos(toRadians);
-        float sinTheta = std::sin(toRadians);
-
-        // Normalize the axis
-        axis = axis.unit();
-
-        columnMajorMatrix rotationMatrix = Identity();
-
-        // First column
-        rotationMatrix.coordinates[0] = cosTheta + axis.x * axis.x * (1 - cosTheta);
-        rotationMatrix.coordinates[1] = axis.x * axis.y * (1 - cosTheta) - axis.z * sinTheta;
-        rotationMatrix.coordinates[2] = axis.x * axis.z * (1 - cosTheta) + axis.y * sinTheta;
-
-        // Second column
-        rotationMatrix.coordinates[4] = axis.y * axis.x * (1 - cosTheta) + axis.z * sinTheta;
-        rotationMatrix.coordinates[5] = cosTheta + axis.y * axis.y * (1 - cosTheta);
-        rotationMatrix.coordinates[6] = axis.y * axis.z * (1 - cosTheta) - axis.x * sinTheta;
-
-        // Third column
-        rotationMatrix.coordinates[8] = axis.z * axis.x * (1 - cosTheta) - axis.y * sinTheta;
-        rotationMatrix.coordinates[9] = axis.z * axis.y * (1 - cosTheta) + axis.x * sinTheta;
-        rotationMatrix.coordinates[10] = cosTheta + axis.z * axis.z * (1 - cosTheta);
-
-        return rotationMatrix;
-    }
-
-
+    // View matrix 
     static columnMajorMatrix constructView(const Cartesian3& camerpos, const Cartesian3& target, const Cartesian3& up)
     {	
         Cartesian3 forward, Up, right;
@@ -300,6 +254,7 @@ class columnMajorMatrix
         return rotation * translation;
     }
 
+    // Look matrix to get objects to rotate and look in a direction 
     static columnMajorMatrix Look(const Cartesian3& camerpos, const Cartesian3& target, const Cartesian3& up)
     {	
         Cartesian3 forward, Up, right;
