@@ -64,7 +64,7 @@ columnMajorMatrix Quaternion::ToRotationMatrix()
 
 void Quaternion::Normalize()
 {
-    float magnitude = std::sqrtf(w*w + x*x + y*y + z*z);
+    float magnitude = sqrt(w*w + x*x + y*y + z*z);
 
     w /= magnitude;
     x /= magnitude;

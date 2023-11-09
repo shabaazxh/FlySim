@@ -10,18 +10,16 @@ class Plane
 {
 public:
     Plane(const char *fileName, const Cartesian3& startPosition, const Cartesian3& dir, float rotAngle,
-    const PlaneRole& role)
+    float collisionRadius, const PlaneRole& role)
     {
         planeModel.ReadFileTriangleSoup(fileName);
         Sphere.ReadFileTriangleSoup("./models/lavaBombModel.tri");
-            // Cartesian3(0.0f, 1000.0f, 0.0f)
-            // dir = Cartesian3(-38500.0f, 100.0f, -4000)
         position = startPosition;
         direction = dir;
         forward = Cartesian3(-1, 0, 0);
         up = Cartesian3(0, 1, 0);
         dirAngle = rotAngle;
-
+        collisionSphereRadius = collisionRadius;
         m_planeRole = role;
     }
 
@@ -33,18 +31,19 @@ public:
 
     bool isCollidingWithParticle(const Particle& particle)
     {
-        float distance = (position - particle.position).length();
-        return distance < (collisionSphereRadius + particle.collisionSphereRadius);
+        float distance = (position - particle.GetPosition()).length();
+        return distance < (collisionSphereRadius + particle.GetCollisionSphereRadius());
     }
     
     bool isCollidingWithFloor(float height)
     {   
-        std::cout << "collision with floor: " << std::endl;
-        return position.y - radius <= height;
+        //std::cout << "height: " << height << " pos: " << position.y - collisionSphereRadius << std::endl;
+        return position.y - collisionSphereRadius <= height;
     }
 
     void update(float dt, const columnMajorMatrix& worldMatrix, const columnMajorMatrix& viewMatrix)
     {
+        deltaTime = dt;
         if(m_planeRole == PlaneRole::Particle)
         {
             Cartesian3 circleCenter = Cartesian3(0, position.y, 0);
@@ -86,6 +85,8 @@ public:
             // Use forward to rotate forward with yaw
             auto up = Cartesian3(0, 1, 0);
             auto forward = Cartesian3(0,0,-1);
+            
+            // Apply yaw rotation
             forward.Rotate(yaw, up);
             forward = forward.unit();
 
@@ -100,12 +101,9 @@ public:
             Cartesian3 u = forward.cross(x);
             u = u.unit();
 
-
             u.Rotate(roll, forward);
             u = u.unit();
-
    
-
             // Set camera direction and up
             direction = forward;
             up = u;
@@ -139,10 +137,11 @@ public:
 
     }
 
-        // Controls
+    // Controls
     void Forward()
     {
-        position = position + 500.0f * direction;
+        //std::cout << deltaTime << std::endl;
+        position = position + 10000.0f * direction * deltaTime;
     }
 
     void Back()
@@ -152,12 +151,12 @@ public:
 
     void Right()
     {
-        yaw += 6.0f;
+        yaw -= 6.0f;
     }
 
     void Left()
     {
-        yaw -= 6.0f;
+        yaw += 6.0f;
     }
 
     void PitchUp()
@@ -190,9 +189,8 @@ public:
     Cartesian3 direction;
     Cartesian3 up;
     float dirAngle = 90.0f;
-    float altitude;
 
-    float scale = 500.0f; // 73
+    float scale = 1.0f; // 73
     float radius = 3000.0f;
     float angle = 0.0f;
     float speed = 900.0f;
@@ -202,13 +200,12 @@ public:
     float roll = 0.0f;
 
     float collisionSphereRadius = 86.0f;
+    float collisionSphereRadiusPlayer = 200.0f;
     Cartesian3 forward;
     GLfloat lavaBombColour[4] = {0.5, 0.3, 0.0, 1.0};
     float offset = 0.0f;
     bool shouldRender = true;
 
     PlaneRole m_planeRole;
-
-    columnMajorMatrix world;
-    columnMajorMatrix view;
+    float deltaTime;
 };

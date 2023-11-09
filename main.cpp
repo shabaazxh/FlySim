@@ -24,7 +24,7 @@ int main(int argc, char **argv)
 	try
 		{ // try block
 		// we want a single instance of the scene model
-		SceneModel theScene;
+		SceneModel theScene(-38500, 2000, -4000);
 		
 		// create the widget with no parent
 		FlightSimulatorWidget flightWindow(NULL, &theScene);

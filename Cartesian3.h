@@ -19,7 +19,7 @@
 
 #include <iostream>
 
-extern class columnMajorMatrix;
+class columnMajorMatrix;
 
 // the class - we will rely on POD for sending to GPU
 class Cartesian3

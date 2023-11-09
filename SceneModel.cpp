@@ -38,13 +38,12 @@ static auto startTime = std::chrono::high_resolution_clock::now();
 auto lastSpawnTime = std::chrono::high_resolution_clock::now() - std::chrono::seconds(5);
 
 // constructor
-SceneModel::SceneModel()
+SceneModel::SceneModel(float x, float y, float z)
 	{ // constructor
 	// this is not the best place to put this in general, but this is a quick and dirty hack
 	// we start by loading three files: one for each model
 	groundModel.ReadFileTerrainData(groundModelName, 500);
 	planeModel.ReadFileTriangleSoup(planeModelName);
-	lavaBombModel.ReadFileTriangleSoup(lavaBombModelName);
 	
 //	When modelling, z is commonly used for "vertical" with x-y used for "horizontal"
 //	When rendering, the default is that we render using screen coordinates, so x is to the right,
@@ -60,33 +59,28 @@ SceneModel::SceneModel()
 //	rotation of 90 degrees CCW
 
 	// set the world to opengl matrix
-
-// 	auto axis = Cartesian3(1.0f, 0.0f, 0.0f);
-// 	Quaternion rotation(90.0f, axis);
-// 	rotation.Normalize();
-// 	Quaternion result = rotation * offset * rotation.Conjugate();
-// 	result.Normalize();
-// 	columnMajorMatrix rot = result.ToRotationMatrix();
-// * columnMajorMatrix::RotateX(180.0f)
-
 	WorldMatrix = columnMajorMatrix::RotateX(90.0f);
-
-	planepos = Cartesian3(0,0,0); 
+	// Instantiate the camera, player and plane objects.
+	// Heap allocate to ensure they live until the end of the program
+	// Destructor will return all heap allocated memory for these objects
 	////-271.4, 3634, -2855
 	m_camera = new Camera(Cartesian3(-38500, 3634, -4000), Cartesian3(0.0f,0.0f, -1.0f), CameraMode::Pilot);
-	m_player = new Plane("./models/planeModel.tri", Cartesian3(-38500, 2000, -4000), Cartesian3(-1.0f, 0.0f, 0.0f), 90.0f, PlaneRole::Controller);
+	//-38500, 2000, -4000
+	m_player = new Plane("./models/planeModel.tri", Cartesian3(x, y, z), Cartesian3(-1.0f, 0.0f, 0.0f), 90.0f, 200.f, PlaneRole::Controller);
 
 	float offset = 0.0f;
-	Plane* plane1 = new Plane("./models/planeModel.tri", Cartesian3(0.0f, 4000.0f, 0.0f), Cartesian3(-1.0f, 0.0f, 0.0f), 90.0f, PlaneRole::Particle);
-	Plane* plane2 = new Plane("./models/planeModel.tri", Cartesian3(-9000.0f, 4000.0f, 0.0f), Cartesian3(1.0f, 0.0f, 0.0f), -90.0f, PlaneRole::Particle);
+	Plane* plane1 = new Plane("./models/planeModel.tri", Cartesian3(0.0f, 4000.0f, 0.0f), Cartesian3(-1.0f, 0.0f, 0.0f), 90.0f, 86.0f, PlaneRole::Particle);
+	Plane* plane2 = new Plane("./models/planeModel.tri", Cartesian3(-9000.0f, 4000.0f, 0.0f), Cartesian3(1.0f, 0.0f, 0.0f), -90.0f, 86.0f, PlaneRole::Particle);
 	planes.push_back(plane1);
 	planes.push_back(plane2);
 
+	m_switchCamera = false; // start by using pilot camera
+
 	RandomDirections();
 
+	// Start the timer to calculatr deltaTime 
 	timer.start();
 
-	second = false;
 
 	} // constructor
 
@@ -119,8 +113,11 @@ void SceneModel::RandomDirections()
 void SceneModel::Update()
 	{ // Update()
 
+		// Calculate delta time to ensure movements in the world are consistent with frame time 
 		deltaTime = timer.restart() / 1000.0f;
-		if(second)
+		
+		// Check if the value is set to switch between follow or pilot camera
+		if(m_switchCamera)
 		{
 			m_camera->SetCameraMode(CameraMode::Follow);
 		} else {
@@ -134,13 +131,10 @@ void SceneModel::Update()
 			m_camera->SetRotations(m_player->yaw, m_player->pitch, m_player->roll);
 			m_camera->SetUp(m_player->up);
 		} else {
-			auto dist = m_player->position - m_camera->GetPosition();
-			dist = dist.unit();
-
+			// Get some distance behind the plane and set the camera to look down from above to follow the plane
 			auto dir = Cartesian3(-300, -2000, -300);
 			dir = dir.unit();
-			auto pos = m_player->position - Cartesian3(300, 0.0f, 300.0f);
-			pos.y = pos.y + 2000.0f;
+			auto pos = m_player->position - Cartesian3(300, -2000.0f, 300.0f);
 			m_camera->SetPosition(m_player->position + dir);
 			m_camera->SetDirection(dir);
 		}
@@ -150,18 +144,18 @@ void SceneModel::Update()
 
 		for(int i = 0; i < particles.size(); i++)
 		{
-			particles[i]->life -= 1.0f;
 			particles[i]->update(deltaTime, WorldMatrix, m_camera->GetViewMatrix());
 		}
 
-		// PARTICLE TO PARTICLE COLLISION
+		// PARTICLE TO PARTICLE COLLISION - Check if particles collide with each other, if they do, add some push force to them and change 
+		// their colour to red to indicate that the interation is heated them both up even more 
 		for(int i = 0; i < particles.size(); i++)
 		{
 			for(int j = i + 1; j < particles.size(); j++)
 			{
 				if(particles[i]->isColliding(*particles[j]))
 				{
-					Cartesian3 pushDirection = particles[i]->position - particles[j]->position;
+					Cartesian3 pushDirection = particles[i]->GetPosition() - particles[j]->GetPosition();
 					pushDirection = pushDirection.unit();
 
 					float magnitude = 30.0f;
@@ -169,40 +163,29 @@ void SceneModel::Update()
 					particles[i]->Push(pushDirection * magnitude);
 					particles[j]->Push(pushDirection * -magnitude);
 
-					particles[i]->lavaBombColour[0] = 1.0;
-					particles[i]->lavaBombColour[1] = 0.0;
-					particles[i]->lavaBombColour[2] = 0.0;
-					particles[i]->lavaBombColour[3] = 1.0;
-
-					particles[j]->lavaBombColour[0] = 1.0;
-					particles[j]->lavaBombColour[1] = 0.0;
-					particles[j]->lavaBombColour[2] = 0.0;
-					particles[j]->lavaBombColour[3] = 1.0;
+					particles[i]->SetColor(1.0f, 0.0f, 0.0f, 1.0f);
+					particles[j]->SetColor(1.0f, 0.0f, 0.0f, 1.0f);
 				}
 			}
 		}
 
 		// IMAPCT WITH GROUND
+		// Check if the particles impact the ground, if they do, deform the mesh and recompute normals
 		for(auto& particle: particles)
 		{
 			// get height wants x,y but z is up for the terrain in local space
 			// impact point y value
 			auto groundMatrix = WorldMatrix * columnMajorMatrix::Scale(Cartesian3(1, -1, 1));
-			float groundHeight = groundModel.getHeight(particle->position.x, particle->position.z);
-			Homogeneous4 vec4GroundHeight = Homogeneous4(0.0f, groundHeight, 0.0f, 1.0f);
-			vec4GroundHeight = groundMatrix * vec4GroundHeight;
-			Homogeneous4 end = Homogeneous4(particle->position.x, groundHeight, particle->position.z, 1.0);
+			// Get the height of the terrain where the particle's position is
+			float groundHeight = groundModel.getHeight(particle->GetPosition().x, particle->GetPosition().z);
+			Homogeneous4 end = Homogeneous4(particle->GetPosition().x, groundHeight, particle->GetPosition().z, 1.0); // end is the hitpoint of particle
 
 			if(particle->isCollidingWithFloor(groundHeight))
 			{
+				// Edit mesh will deform the mesh where the impact of the particle happens
 				groundModel.EditMesh(Cartesian3(end.x, end.y, end.z), 1.1f * 100.0f, groundMatrix);
-				particle->lavaBombColour[0] = 0.2;
-				particle->lavaBombColour[1] = 0.3;
-				particle->lavaBombColour[2] = 0.7;
-				particle->lavaBombColour[3] = 1.0;
-
-				groundModel.ComputeUnitNormalVectors();
-				//particle->life = -1.0f;
+				particle->SetColor(0.2f, 0.3f, 0.7f, 1.0f); // change colour when hitting the floor (this is mostly unnoticeable but when visible looks good)
+				groundModel.ComputeUnitNormalVectors(); //re-compute normals since ground mesh has changed to ensure lighting looks correct
 			}
 		}
 
@@ -211,6 +194,7 @@ void SceneModel::Update()
 			planes[i]->update(deltaTime, WorldMatrix, m_camera->GetViewMatrix());
 		}
 
+		// Check if the planes flying in the air are colliding with one another 
 		for(int i = 0; i < planes.size(); i++)
 		{
 			for(int j = i + 1; j < planes.size(); j++)
@@ -224,17 +208,22 @@ void SceneModel::Update()
 			}
 		}
 
+		// Check if the plane collides with a flying particle lava bomb 
+		// if so exit the game since the plane will be destroyed
 		for(int i = 0; i < particles.size(); i++)
 		{
 			if(m_player->isCollidingWithParticle(*particles[i]))
 			{
-				std::cout << "Plane collided with particle" << std::endl;
+				std::cout << "You crashed the plane into a lava bomb, which destroyed it." << std::endl;
+				exit(0);
 			}
 		}
 
+		// Check the players collision with the floor. If they collide, exit the game 
 		if(m_player->isCollidingWithFloor(groundModel.getHeight(m_player->position.x, m_player->position.z)))
 		{
-			std::cout << "Player plane hit floor" << std::endl;
+			std::cout << "You hit the floor and crashed the plane." << std::endl;
+			exit(0);
 		}
 	} // Update()
 
@@ -288,15 +277,6 @@ void SceneModel::Render()
 	groundModel.Render(groundMatrix);
 
 	// translate, rotate, scale
-
-	// auto axis = Cartesian3(0.0f, 1.0f, 0.0f);
-	// Quaternion rotation(180.0f, axis);
-	// rotation.Normalize();
-	// Quaternion result = rotation * offset * rotation.Conjugate();
-	// result.Normalize();
-	// columnMajorMatrix rot = result.ToRotationMatrix();
-//* columnMajorMatrix::RotateX(180.0f)
-
 	glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, planeColour);
 	glMaterialfv(GL_FRONT, GL_SPECULAR, blackColour);
 	glMaterialfv(GL_FRONT, GL_EMISSION, blackColour);
@@ -322,16 +302,19 @@ void SceneModel::Render()
 		lastSpawnTime = curr;
 		lastIndex >= random_directions.size() ? lastIndex = 0 : lastIndex++;
 	}
-	// maybe only add to particles vector as new Particle() when spawning based on time
+
+	// Loop through all particles and render them
 	for(int i = 0; i < particles.size();)
 	{
-		if(particles[i]->life > 0.0f)
+		// If the particle has life, it should be rendered 
+		if(particles[i]->GetLife() > 0.0f)
 		{
-			glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, particles[i]->lavaBombColour);
+			glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, particles[i]->GetColor());
 			glMaterialfv(GL_FRONT, GL_SPECULAR, blackColour);
 			glMaterialfv(GL_FRONT, GL_EMISSION, blackColour);
 			
-			particles[i]->lavaBombModel.Render(particles[i]->modelMatrix);
+			auto transformationMatrix = particles[i]->GetModelMatrix();
+			particles[i]->lavaBombModel.Render(transformationMatrix);
 			
 			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 			glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, lavaBombColour2);
@@ -339,22 +322,23 @@ void SceneModel::Render()
 			glMaterialfv(GL_FRONT, GL_EMISSION, blackColour);
 
 			float scale = 1.1f; // scaled to 1.1 so we can see the collision shape
-			auto temp = particles[i]->modelMatrix * columnMajorMatrix::Scale(Cartesian3(scale, scale, scale));
-			particles[i]->Sphere.Render(temp);
+			auto particleMatrix = particles[i]->GetModelMatrix();
+			auto sphereMatrix = particleMatrix * columnMajorMatrix::Scale(Cartesian3(scale, scale, scale));
+			particles[i]->Sphere.Render(sphereMatrix);
 
 			// Render child particles
-			for(auto& child : particles[i]->children)
+			for(auto& child : particles[i]->GetChildren())
 			{
 				glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-				glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, child->childSmoke);
+				glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, child->GetChildColor());
 				glMaterialfv(GL_FRONT, GL_SPECULAR, blackColour);
 				glMaterialfv(GL_FRONT, GL_EMISSION, blackColour);
 				
-				child->radius = 1.5f;
-				child->modelMatrix = m_camera->GetViewMatrix() * 
-				columnMajorMatrix::Translate(child->position) * 
-				WorldMatrix * columnMajorMatrix::Scale(Cartesian3(child->radius, child->radius, child->radius));
-				child->lavaBombModel.Render(child->modelMatrix);
+				child->SetScale(0.5f);
+				auto matrix = m_camera->GetViewMatrix() * 
+				columnMajorMatrix::Translate(child->GetPosition()) * 
+				WorldMatrix * columnMajorMatrix::Scale(Cartesian3(child->GetScale(), child->GetScale(), child->GetScale()));
+				child->lavaBombModel.Render(matrix);
 			}
 			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 			i++;
@@ -379,7 +363,7 @@ void SceneModel::Render()
 			glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, lavaBombColour2);
 			glMaterialfv(GL_FRONT, GL_SPECULAR, blackColour);
 			glMaterialfv(GL_FRONT, GL_EMISSION, blackColour);
-			planes[i]->Sphere.Render(planes[i]->sphereMatrix);
+			planes[i]->Sphere.Render(planes[i]->sphereMatrix); // render the collision sphere for the plane
 
 			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 		}

@@ -19,6 +19,7 @@
 #define MATRIX4_H
 
 #include <iostream>
+#include <cmath>
 #include "Cartesian3.h"
 #include "Homogeneous4.h"
 

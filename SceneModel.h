@@ -55,7 +55,7 @@ class SceneModel
 	columnMajorMatrix viewMatrix;
 	
 	// constructor
-	SceneModel();
+	SceneModel(float x, float y, float z);
 	~SceneModel();
 
 	// routine that updates the scene for the next frame
@@ -73,10 +73,11 @@ class SceneModel
 	}
 	void CreateParticles();
 	void RandomDirections();
+	void SetPlanePosition(float x, float y, float z);
 
-	void change()
+	void SwitchCamera()
 	{
-		second = second == false ? true : false;
+		m_switchCamera = m_switchCamera == false ? true : false;
 	}
 
 	Camera* m_camera;
@@ -95,7 +96,7 @@ class SceneModel
 
 	Plane* m_player;
 
-	bool second;
+	bool m_switchCamera;
 	
 	}; // class SceneModel
 

@@ -102,11 +102,9 @@ void FlightSimulatorWidget::keyPressEvent(QKeyEvent *event)
 			theScene->m_player->PitchUp();
 			break;
 		case Qt::Key_O:
-			std::cout << "Roll left: " << std::endl;
 			theScene->m_player->RollLeft();
 			break;
 		case Qt::Key_P:
-			std::cout << "Roll right: " << std::endl;
 			theScene->m_player->RollRight();
 			break;
 		case Qt::Key_Plus:
@@ -117,7 +115,7 @@ void FlightSimulatorWidget::keyPressEvent(QKeyEvent *event)
 			theScene->reduce();
 			break;
 		case Qt::Key_V:
-			theScene->change();
+			theScene->SwitchCamera();
 			break;
 		case Qt::Key_X:
 			exit(0);
