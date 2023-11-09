@@ -27,12 +27,19 @@ public:
 
     bool isColliding(const Plane& other) const
     {   
-        float d = (position - other.position).length();
-        return d < (collisionSphereRadius + other.collisionSphereRadius);
+        float planeCollision = (position - other.position).length();
+        return planeCollision < (collisionSphereRadius + other.collisionSphereRadius);
+    }
+
+    bool isCollidingWithParticle(const Particle& particle)
+    {
+        float distance = (position - particle.position).length();
+        return distance < (collisionSphereRadius + particle.collisionSphereRadius);
     }
     
     bool isCollidingWithFloor(float height)
     {   
+        std::cout << "collision with floor: " << std::endl;
         return position.y - radius <= height;
     }
 
@@ -73,28 +80,58 @@ public:
             sphereMatrix = viewMatrix * columnMajorMatrix::Translate(position) * worldMatrix;
         } else 
         {
-            direction.x = std::cos(DEG2RAD(yaw)) * std::cos(DEG2RAD(pitch));
-            direction.y = std::sin(DEG2RAD(pitch));
-            direction.z = std::sin(DEG2RAD(yaw)) * std::cos(DEG2RAD(pitch));
-            direction = direction.unit();
+            if(pitch >= 89.0f) pitch = 89.0f;
+            if(pitch <= -89.0f) pitch = -89.0f;
 
-            auto right = Cartesian3(0.0f, 1.0f, 0.0f).cross(direction);
-            right = right.unit();
+            // Use forward to rotate forward with yaw
+            auto up = Cartesian3(0, 1, 0);
+            auto forward = Cartesian3(0,0,-1);
+            forward.Rotate(yaw, up);
+            forward = forward.unit();
 
-            up = direction.cross(right);
-            up = up.unit();
+            // Calculate x direction and rotate forward using pitch
+            Cartesian3 x = up;
+            x = x.cross(forward);
+            x = x.unit();
+            forward.Rotate(pitch, x);
+            forward = forward.unit();
+            
+            // Find new up
+            Cartesian3 u = forward.cross(x);
+            u = u.unit();
 
-            if(roll != 0)
-            {
-                auto rollMatrix = columnMajorMatrix::Rotate(roll,
-                direction);
 
-                auto tempUp = rollMatrix * up;
-                auto tempRight = rollMatrix * right;
+            u.Rotate(roll, forward);
+            u = u.unit();
 
-                up = Cartesian3(tempUp.x, tempUp.y, tempUp.z);
-                right = Cartesian3(tempRight.x, tempRight.y, tempRight.z);
-            }
+   
+
+            // Set camera direction and up
+            direction = forward;
+            up = u;
+
+            // direction.x = std::cos(DEG2RAD(yaw)) * std::cos(DEG2RAD(pitch));
+            // direction.y = std::sin(DEG2RAD(pitch));
+            // direction.z = std::sin(DEG2RAD(yaw)) * std::cos(DEG2RAD(pitch));
+            // direction = direction.unit();
+
+            // auto right = Cartesian3(0.0f, 1.0f, 0.0f).cross(direction);
+            // right = right.unit();
+
+            // up = direction.cross(right);
+            // up = up.unit();
+
+            // if(roll != 0)
+            // {
+            //     auto rollMatrix = columnMajorMatrix::Rotate(roll,
+            //     direction);
+
+            //     auto tempUp = rollMatrix * up;
+            //     auto tempRight = rollMatrix * right;
+
+            //     up = Cartesian3(tempUp.x, tempUp.y, tempUp.z);
+            //     right = Cartesian3(tempRight.x, tempRight.y, tempRight.z);
+            // }
 
             auto look = columnMajorMatrix::Look(position, position + direction, up);
             modelMatrix = look;
@@ -161,7 +198,7 @@ public:
     float speed = 900.0f;
 
     float pitch = 0.0f;
-    float yaw = -90.0f;
+    float yaw = 0.0f;
     float roll = 0.0f;
 
     float collisionSphereRadius = 86.0f;

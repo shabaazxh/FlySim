@@ -60,15 +60,22 @@ SceneModel::SceneModel()
 //	rotation of 90 degrees CCW
 
 	// set the world to opengl matrix
+
+// 	auto axis = Cartesian3(1.0f, 0.0f, 0.0f);
+// 	Quaternion rotation(90.0f, axis);
+// 	rotation.Normalize();
+// 	Quaternion result = rotation * offset * rotation.Conjugate();
+// 	result.Normalize();
+// 	columnMajorMatrix rot = result.ToRotationMatrix();
+// * columnMajorMatrix::RotateX(180.0f)
+
 	WorldMatrix = columnMajorMatrix::RotateX(90.0f);
 
-	planepos = Cartesian3(0,0,0);
+	planepos = Cartesian3(0,0,0); 
+	////-271.4, 3634, -2855
+	m_camera = new Camera(Cartesian3(-38500, 3634, -4000), Cartesian3(0.0f,0.0f, -1.0f), CameraMode::Pilot);
+	m_player = new Plane("./models/planeModel.tri", Cartesian3(-38500, 2000, -4000), Cartesian3(-1.0f, 0.0f, 0.0f), 90.0f, PlaneRole::Controller);
 
-	m_camera = new Camera(Cartesian3(-271.4, 3634, -2855), Cartesian3(0.0f,0.0f, -1.0f), CameraMode::Pilot);
-    m_followCamera = new Camera(Cartesian3(0.0f, 100.0f, 0.0f), Cartesian3(0,0,0), CameraMode::Follow);
-	m_player = new Plane("./models/planeModel.tri", Cartesian3(0, 2000.0f, 0.0f), Cartesian3(-1.0f, 0.0f, 0.0f), 90.0f, PlaneRole::Controller);
-	// Plane(const char *fileName, const Cartesian3& startPosition, const Cartesian3& dir, float rotAngle,
-    //const PlaneRole& role)
 	float offset = 0.0f;
 	Plane* plane1 = new Plane("./models/planeModel.tri", Cartesian3(0.0f, 4000.0f, 0.0f), Cartesian3(-1.0f, 0.0f, 0.0f), 90.0f, PlaneRole::Particle);
 	Plane* plane2 = new Plane("./models/planeModel.tri", Cartesian3(-9000.0f, 4000.0f, 0.0f), Cartesian3(1.0f, 0.0f, 0.0f), -90.0f, PlaneRole::Particle);
@@ -97,7 +104,6 @@ SceneModel::~SceneModel()
 	}
 
 	delete m_camera;
-	delete m_followCamera;
 }
 
 void SceneModel::RandomDirections()
@@ -114,31 +120,34 @@ void SceneModel::Update()
 	{ // Update()
 
 		deltaTime = timer.restart() / 1000.0f;
-		if(m_camera->m_cameraMode == CameraMode::Pilot)
+		if(second)
+		{
+			m_camera->SetCameraMode(CameraMode::Follow);
+		} else {
+			m_camera->SetCameraMode(CameraMode::Pilot);
+		}
+
+		if(m_camera->GetCameraMode() == CameraMode::Pilot)
 		{
 			m_camera->SetPosition(m_player->position);
 			m_camera->SetDirection(m_player->direction);
 			m_camera->SetRotations(m_player->yaw, m_player->pitch, m_player->roll);
+			m_camera->SetUp(m_player->up);
 		} else {
 			auto dist = m_player->position - m_camera->GetPosition();
 			dist = dist.unit();
 
+			auto dir = Cartesian3(-300, -2000, -300);
+			dir = dir.unit();
 			auto pos = m_player->position - Cartesian3(300, 0.0f, 300.0f);
 			pos.y = pos.y + 2000.0f;
-			m_camera->SetPosition(pos);
-			m_camera->SetDirection(dist);
-		}
-
-		if(second)
-		{
-			m_camera->m_cameraMode = CameraMode::Follow;
-		} else {
-			m_camera->m_cameraMode = CameraMode::Pilot;
+			m_camera->SetPosition(m_player->position + dir);
+			m_camera->SetDirection(dir);
 		}
 
 		m_camera->Update();
 		m_player->update(deltaTime, WorldMatrix, viewMatrix);
-		//planepos = Cartesian3(2.0f, 100.0f, 3.0f);
+
 		for(int i = 0; i < particles.size(); i++)
 		{
 			particles[i]->life -= 1.0f;
@@ -215,11 +224,18 @@ void SceneModel::Update()
 			}
 		}
 
-		m_followCamera->SetPosition(Cartesian3(0, 0, 0));
-		auto dir = planepos - m_followCamera->GetPosition();
-		dir = dir.unit();
-		m_followCamera->SetDirection(dir);
-		
+		for(int i = 0; i < particles.size(); i++)
+		{
+			if(m_player->isCollidingWithParticle(*particles[i]))
+			{
+				std::cout << "Plane collided with particle" << std::endl;
+			}
+		}
+
+		if(m_player->isCollidingWithFloor(groundModel.getHeight(m_player->position.x, m_player->position.z)))
+		{
+			std::cout << "Player plane hit floor" << std::endl;
+		}
 	} // Update()
 
 // routine to tell the scene to render itself
@@ -281,43 +297,16 @@ void SceneModel::Render()
 	// columnMajorMatrix rot = result.ToRotationMatrix();
 //* columnMajorMatrix::RotateX(180.0f)
 
-
-	// Plane follow camera	
-	float scale = 1.0f;
-	Cartesian3 direction;
-	direction.x = std::cos(DEG2RAD(m_camera->GetYaw())) * std::cos(DEG2RAD(m_camera->GetPitch()));
-	direction.y = std::sin(DEG2RAD(m_camera->GetPitch()));
-	direction.z = std::sin(DEG2RAD(m_camera->GetYaw())) * std::cos(DEG2RAD(m_camera->GetPitch()));
-	auto planeTarget = direction.unit();
-
-	auto right = Cartesian3(0.0f, 1.0f, 0.0f).cross(m_camera->GetDirection());
-	right = right.unit();
-
-	float distance = 2.0f;
-
-	Cartesian3 offset = m_camera->GetPosition() + m_camera->GetDirection().unit() * distance;
-
-	auto planeUp = m_camera->GetDirection().cross(right);
-	planeUp = m_camera->GetUp().unit();
-
-	//m_camera->m_cameraMode = CameraMode::Follow;
-	m_camera->planepos = planepos;
-	m_camera->planedir = planeTarget;
-
-	auto planeRot = columnMajorMatrix::Look(offset, (offset + planeTarget), planeUp);
-
-	objectModelMatrix = m_camera->GetViewMatrix() * columnMajorMatrix::Translate(offset) *
-	planeRot * WorldMatrix * 
-	columnMajorMatrix::Scale(Cartesian3(scale, scale, scale));
-
 	glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, planeColour);
 	glMaterialfv(GL_FRONT, GL_SPECULAR, blackColour);
 	glMaterialfv(GL_FRONT, GL_EMISSION, blackColour);
 
+	float scale = 1.0f;
+	float distance = 2.0f;
+	Cartesian3 offset = m_camera->GetPosition() + m_camera->GetDirection().unit() * distance;
 	auto m = m_camera->GetViewMatrix() * columnMajorMatrix::Translate(offset) * m_player->modelMatrix *
 	WorldMatrix * columnMajorMatrix::Scale(Cartesian3(scale, scale, scale));
 	m_player->planeModel.Render(m);
-	//planeModel.Render(objectModelMatrix);
 
 	glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, lavaBombColour);
 	glMaterialfv(GL_FRONT, GL_SPECULAR, blackColour);
@@ -327,7 +316,9 @@ void SceneModel::Render()
 	float timeSinceLastSpawn = std::chrono::duration<float, std::chrono::seconds::period>(curr - lastSpawnTime).count();
 	if(timeSinceLastSpawn >= 3.0f)
 	{	
-		particles.push_back(new Particle("./models/lavaBombModel.tri", random_directions[lastIndex], 2.0f, 1.0f));
+		Particle* p = new Particle("./models/lavaBombModel.tri", random_directions[lastIndex], 2.0f, 1.0f);
+		p->CreateChildren();
+		particles.push_back(p);
 		lastSpawnTime = curr;
 		lastIndex >= random_directions.size() ? lastIndex = 0 : lastIndex++;
 	}
@@ -340,7 +331,6 @@ void SceneModel::Render()
 			glMaterialfv(GL_FRONT, GL_SPECULAR, blackColour);
 			glMaterialfv(GL_FRONT, GL_EMISSION, blackColour);
 			
-			auto mat = m_camera->GetViewMatrix() * (particles[i]->modelMatrix * WorldMatrix);	
 			particles[i]->lavaBombModel.Render(particles[i]->modelMatrix);
 			
 			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -352,6 +342,20 @@ void SceneModel::Render()
 			auto temp = particles[i]->modelMatrix * columnMajorMatrix::Scale(Cartesian3(scale, scale, scale));
 			particles[i]->Sphere.Render(temp);
 
+			// Render child particles
+			for(auto& child : particles[i]->children)
+			{
+				glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+				glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, child->childSmoke);
+				glMaterialfv(GL_FRONT, GL_SPECULAR, blackColour);
+				glMaterialfv(GL_FRONT, GL_EMISSION, blackColour);
+				
+				child->radius = 1.5f;
+				child->modelMatrix = m_camera->GetViewMatrix() * 
+				columnMajorMatrix::Translate(child->position) * 
+				WorldMatrix * columnMajorMatrix::Scale(Cartesian3(child->radius, child->radius, child->radius));
+				child->lavaBombModel.Render(child->modelMatrix);
+			}
 			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 			i++;
 		} else 

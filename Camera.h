@@ -20,6 +20,7 @@ public:
     float GetPitch() const { return m_pitch; }
     float GetYaw() const { return m_yaw; }
     columnMajorMatrix GetViewMatrix() { return m_viewMatrix; }
+    CameraMode GetCameraMode() const { return m_cameraMode; }
 
     void SetDirection(const Cartesian3& dir)
     {
@@ -31,11 +32,21 @@ public:
         m_position = pos;
     }
 
+    void SetUp(const Cartesian3& up)
+    {
+        m_up = up;
+    }
+
     void SetRotations(float yaw, float pitch, float roll)
     {
         m_yaw = yaw;
         m_pitch = pitch;
         m_roll = roll;
+    }
+
+    void SetCameraMode(const CameraMode& mode)
+    {
+        m_cameraMode = mode;
     }
 
     void Update()
@@ -91,30 +102,35 @@ public:
 
         if(m_cameraMode == CameraMode::Pilot)
         {
-            Cartesian3 direction;
-            direction.x = std::cos(DEG2RAD(m_yaw)) * std::cos(DEG2RAD(m_pitch));
-            direction.y = std::sin(DEG2RAD(m_pitch));
-            direction.z = std::sin(DEG2RAD(m_yaw)) * std::cos(DEG2RAD(m_pitch));
-            m_direction = direction.unit();
+            // Cartesian3 direction;
+            // direction.x = std::cos(DEG2RAD(m_yaw)) * std::cos(DEG2RAD(m_pitch));
+            // direction.y = std::sin(DEG2RAD(m_pitch));
+            // direction.z = std::sin(DEG2RAD(m_yaw)) * std::cos(DEG2RAD(m_pitch));
+            // m_direction = direction.unit();
 
+
+            // Camera was stretching with pitch but fixed it by recalculating
+            // up vector which stopped the stretching
             auto right = Cartesian3(0.0f, 1.0f, 0.0f).cross(m_direction);
             right = right.unit();
 
             m_up = m_direction.cross(right);
             m_up = m_up.unit();
+
+            m_up.Rotate(m_roll, m_direction);
+            m_up = m_up.unit();
             
-            if(m_roll != 0)
-            {
-                auto rollMatrix = columnMajorMatrix::Rotate(m_roll,
-                m_direction);
+            // if(m_roll != 0)
+            // {
+            //     auto rollMatrix = columnMajorMatrix::Rotate(m_roll,
+            //     m_direction);
 
-                auto tempUp = rollMatrix * m_up;
-                auto tempRight = rollMatrix * right;
+            //     auto tempUp = rollMatrix * m_up;
+            //     auto tempRight = rollMatrix * right;
 
-                m_up = Cartesian3(tempUp.x, tempUp.y, tempUp.z);
-                right = Cartesian3(tempRight.x, tempRight.y, tempRight.z);
-            }
-
+            //     m_up = Cartesian3(tempUp.x, tempUp.y, tempUp.z);
+            //     right = Cartesian3(tempRight.x, tempRight.y, tempRight.z);
+            // }
             m_viewMatrix = columnMajorMatrix::constructView(m_position, (m_position + m_direction), m_up);
         } else 
         {
@@ -122,51 +138,7 @@ public:
         }
 
     }
-
-    // Controls
-    void Forward()
-    {
-        m_position = m_position + m_movementSpeed * m_direction;
-    }
-
-    void Back()
-    {
-        m_position = m_position - m_movementSpeed * m_direction;
-    }
-
-    void Right()
-    {
-        m_yaw += m_dirChangeAmount;
-    }
-
-    void Left()
-    {
-        m_yaw -= m_dirChangeAmount;
-    }
-
-    void PitchUp()
-    {
-        m_pitch += m_dirChangeAmount;
-    }
-
-    void PitchDown()
-    {
-        m_pitch -= m_dirChangeAmount;
-    }
-
-    void RollRight()
-    {
-        m_roll += m_dirChangeAmount;
-    }
-
-    void RollLeft()
-    {
-        m_roll -= m_dirChangeAmount;
-    }
-
-    Cartesian3 planepos;
-    Cartesian3 planedir;
-    CameraMode m_cameraMode;
+    
 private:
     Cartesian3 m_position;
     Cartesian3 m_direction;
@@ -177,4 +149,5 @@ private:
     columnMajorMatrix m_viewMatrix;
     float m_movementSpeed;
     float m_dirChangeAmount;
+    CameraMode m_cameraMode;
 };

@@ -14,6 +14,7 @@ public:
     float radius = 0.0f;
     float collisionSphereRadius = 86.0f;
     GLfloat lavaBombColour[4] = {0.5, 0.3, 0.0, 1.0};
+    GLfloat childSmoke[4] = {1.0f, 1.0f, 1.0f, 1.0};
 
     columnMajorMatrix world;
     columnMajorMatrix view;
@@ -34,23 +35,31 @@ public:
         altitude = 100.0f;
         radius = r;
     }
+    // Destructor to clean up heap allocated resources within the class
+    ~Particle()
+    {
+        for(auto& child : children)
+        {
+            if(child != nullptr)
+            {
+                delete child;
+            }
+        }
+    }
+
+    void CreateChildren()
+    {
+        for(int i = 0; i < 5; i++)
+        {
+            Particle* p = new Particle("./models/lavaBombModel.tri", direction, 2.0f, 1.0f);
+            children.push_back(p);
+        }
+    }
 
     void Push(const Cartesian3& pushAmount)
     {
         Cartesian3 acceleration = pushAmount / mass;
-        
         velocity = velocity + acceleration;
-    }
-    
-    void RenderChildren(columnMajorMatrix& WorldMatrix, columnMajorMatrix& viewMatrix)
-    {   
-        float size = 0.5f;
-        auto mat = viewMatrix * (modelMatrix * WorldMatrix) * columnMajorMatrix::Scale(Cartesian3(size, size, size));	
-
-        for(int i = 0; i < 5; i++)
-        {
-            lavaBombModel.Render(mat);
-        }
     }
 
     bool isColliding(const Particle& other) const
@@ -67,11 +76,6 @@ public:
 
     void update(float dt, const columnMajorMatrix& worldMatrix, const columnMajorMatrix& viewMatrix)
     {
-        //Cartesian3 acc = gravity / mass;
-        //velocity = velocity + acc * dt * dt / 2;
-        
-        //velocity.y += gravity * dt;
-
         world = worldMatrix;
         view = viewMatrix;
 
@@ -91,13 +95,34 @@ public:
             velocity.y = 0;
             life = 0.0f;
         }
+        // Update the children 
+        for(int i = 0; i < children.size(); i++)
+        {
+            // Calculate the position of the child particle relative to the main particle
+            Cartesian3 childPosition = position - direction * (i + 1) * 3.0f; // 10.0f is the distance between particles
+            // Update the position and velocity of the child particle
 
-        //std::cout << "Altitude: " << position.y << std::endl;
-        // make world matrix extern or something to fix order of operation?
+            // Add a swirl to the trajectory of the child particles
+            //float angle = dt * 2.0f * M_PI; // Rotate by one full circle (2π) every second
+            
+            auto angularSpeed = 1.0f / (i + 1);
+
+            angle += angularSpeed * dt;
+
+            float r = 10.f * (i + 1); // Radius of the swirl
+            childPosition.x += r * cos(angle);
+            childPosition.z += r * sin(angle);
+
+            children[i]->position = childPosition;
+            children[i]->velocity = velocity;
+        }
+        
         modelMatrix = view * columnMajorMatrix::Translate(position) * world * columnMajorMatrix::Scale(Cartesian3(radius, radius, radius));
     }
 
+    float angle = 0.0f;
     HomogeneousFaceSurface lavaBombModel;
     HomogeneousFaceSurface Sphere;
     columnMajorMatrix modelMatrix;
+    std::vector<Particle*> children;
 };
