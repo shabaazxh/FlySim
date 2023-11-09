@@ -204,3 +204,20 @@ float Terrain::getHeight(float x, float y)
 	// return the height
 	return height;
 	} // getHeight()
+
+
+void Terrain::EditMesh(const Cartesian3& hitpoint, float radius, const columnMajorMatrix& matrix)
+{
+	for(auto& vertex: vertices)
+	{    
+		float x = vertex.x - hitpoint.x;
+		float y = vertex.y - hitpoint.z;
+		float dist = sqrt(x*x + y*y);
+		float force = 8.0f;
+		if(dist <= radius * force)
+		{
+			float a = ((radius - dist) / radius) * force;
+			vertex.z += a * 1.0f;
+		}
+	}	
+}

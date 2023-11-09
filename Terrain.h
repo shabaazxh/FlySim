@@ -18,12 +18,6 @@
 
 #include "HomogeneousFaceSurface.h"
 
-struct AABB
-{
-	Cartesian3 min;
-	Cartesian3 max;
-};
-
 class Terrain : public HomogeneousFaceSurface
 	{ // class Terrain
 	public:
@@ -35,44 +29,7 @@ class Terrain : public HomogeneousFaceSurface
 
 	// constructor will initialise to safe values
 	Terrain();
-
-	AABB CreateAABB()
-	{
-		AABB box;
-
-		box.min.x = box.min.y = box.min.z = 0.0f;
-		box.max.x = heightValues[0].size() - 1;
-		box.max.y = heightValues[0][0];
-		box.max.z = heightValues.size() - 1;
-
-		for(const auto& row : heightValues)
-		{
-			for(const auto& height : row)
-			{
-				box.min.y = std::min(box.min.y, height);
-				box.max.y = std::max(box.max.y, height);
-			}
-		}
-
-		return box;
-	}
-	void EditMesh(const Cartesian3& hitpoint, float radius, const columnMajorMatrix& matrix)
-	{
-		
-		for(auto& vertex: vertices)
-		{    
-			float x = vertex.x - hitpoint.x;
-			float y = vertex.y - hitpoint.z;
-			float dist = sqrt(x*x + y*y);
-			float force = 8.0f;
-			if(dist <= radius * force)
-			{
-				std::cout << "Doing this " << std::endl;
-				float a = ((radius - dist) / radius) * force;
-				vertex.z += a * 1.0f;
-			}
-		}	
-	}
+	void EditMesh(const Cartesian3& hitpoint, float radius, const columnMajorMatrix& matrix);
 	// read routine returns true on success, failure otherwise
 	// xyScale gives the scale factor to use in the x-y directions
 	bool ReadFileTerrainData(const char *fileName, float XYScale);

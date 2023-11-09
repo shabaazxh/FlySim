@@ -1,5 +1,5 @@
 #include <iostream>
-#include "Matrix4.h"
+#include "Particle.h"
 
 enum class PlaneRole
 {
@@ -137,46 +137,50 @@ public:
 
     }
 
+    float GetSpeed();
+    void IncreaseSpeed(float speed);
+    void DecreaseSpeed(float speed);
+
     // Controls
     void Forward()
     {
         //std::cout << deltaTime << std::endl;
-        position = position + 10000.0f * direction * deltaTime;
+        position = position + movementSpeed * direction * deltaTime;
     }
 
     void Back()
     {
-        position = position - 500.0f * direction;
+        position = position - movementSpeed * direction;
     }
 
     void Right()
     {
-        yaw -= 6.0f;
+        yaw -= turnSpeed * deltaTime;
     }
 
     void Left()
     {
-        yaw += 6.0f;
+        yaw += turnSpeed * deltaTime;
     }
 
     void PitchUp()
     {
-        pitch += 6.0f;
+        pitch += turnSpeed * deltaTime;
     }
 
     void PitchDown()
     {
-        pitch -= 6.0f;
+        pitch -= turnSpeed * deltaTime;
     }
 
     void RollRight()
     {
-        roll += 6.0f;
+        roll += turnSpeed * deltaTime;
     }
 
     void RollLeft()
     {
-        roll -= 6.0f;
+        roll -= turnSpeed * deltaTime;
     }
 
     HomogeneousFaceSurface planeModel;
@@ -194,6 +198,8 @@ public:
     float radius = 3000.0f;
     float angle = 0.0f;
     float speed = 900.0f;
+    float movementSpeed = 0.0f;
+    float turnSpeed = 500.0f;
 
     float pitch = 0.0f;
     float yaw = 0.0f;
@@ -202,7 +208,7 @@ public:
     float collisionSphereRadius = 86.0f;
     float collisionSphereRadiusPlayer = 200.0f;
     Cartesian3 forward;
-    GLfloat lavaBombColour[4] = {0.5, 0.3, 0.0, 1.0};
+    float lavaBombColour[4] = {0.5, 0.3, 0.0, 1.0};
     float offset = 0.0f;
     bool shouldRender = true;
 

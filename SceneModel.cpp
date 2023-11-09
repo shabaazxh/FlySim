@@ -144,7 +144,7 @@ void SceneModel::Update()
 
 		for(int i = 0; i < particles.size(); i++)
 		{
-			particles[i]->update(deltaTime, WorldMatrix, m_camera->GetViewMatrix());
+			particles[i]->Update(deltaTime, WorldMatrix, m_camera->GetViewMatrix());
 		}
 
 		// PARTICLE TO PARTICLE COLLISION - Check if particles collide with each other, if they do, add some push force to them and change 
@@ -307,7 +307,7 @@ void SceneModel::Render()
 	for(int i = 0; i < particles.size();)
 	{
 		// If the particle has life, it should be rendered 
-		if(particles[i]->GetLife() > 0.0f)
+		if(particles[i]->GetShouldRender() == true)
 		{
 			glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, particles[i]->GetColor());
 			glMaterialfv(GL_FRONT, GL_SPECULAR, blackColour);
@@ -369,4 +369,10 @@ void SceneModel::Render()
 		}
 	}
 } // Render()	
+
+// Switches between follow camera and pilot camera
+void SceneModel::SwitchCamera()
+{
+	m_switchCamera = m_switchCamera == false ? true : false;
+}
 	

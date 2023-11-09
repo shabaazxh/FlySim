@@ -26,7 +26,6 @@
 
 #include "Matrix4.h"
 #include "Quaternion.h"
-#include "Particle.h"
 #include "Plane.h"
 #include "Camera.h"
 
@@ -64,21 +63,11 @@ class SceneModel
 	// routine to tell the scene to render itself
 	void Render();
 
-	void reduce()
-	{
-		for(auto& plane : planes)
-		{
-			plane->radius = plane->radius += 1.0f;
-		}
-	}
-	void CreateParticles();
+	// Create the random directions for the particles up to max count
 	void RandomDirections();
-	void SetPlanePosition(float x, float y, float z);
 
-	void SwitchCamera()
-	{
-		m_switchCamera = m_switchCamera == false ? true : false;
-	}
+	// Camera is part of the scene so we can switch between cameras
+	void SwitchCamera();
 
 	Camera* m_camera;
 	Camera* m_followCamera;
