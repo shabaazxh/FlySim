@@ -83,28 +83,25 @@ void FlightSimulatorWidget::keyPressEvent(QKeyEvent *event)
 		{ // end of key switch
 		// we will use the official QT codes, even though they're mostly just ASCII
 		// this means we don't distinguish between upper & lower case
-		case Qt::Key_W:
-			theScene->m_player->Forward();
-			break;
+		// case Qt::Key_W:
+		// 	theScene->m_player->Forward();
+		// 	break;
 		case Qt::Key_D:
 			theScene->m_player->Right();
 			break;
-		case Qt::Key_A:
+		case Qt::Key_W:
 			theScene->m_player->Left();
 			break;
 		case Qt::Key_S:
-			theScene->m_player->Back();
-			break;
-		case Qt::Key_E:
 			theScene->m_player->PitchDown();
 			break;
-		case Qt::Key_Q:
+		case Qt::Key_A:
 			theScene->m_player->PitchUp();
 			break;
-		case Qt::Key_O:
+		case Qt::Key_Q:
 			theScene->m_player->RollLeft();
 			break;
-		case Qt::Key_P:
+		case Qt::Key_E:
 			theScene->m_player->RollRight();
 			break;
 		case Qt::Key_Plus:
@@ -115,9 +112,6 @@ void FlightSimulatorWidget::keyPressEvent(QKeyEvent *event)
 			break;
 		case Qt::Key_V:
 			theScene->SwitchCamera();
-			break;
-		case Qt::Key_M:
-			theScene->m_camera->EnableThirdPerson();
 			break;
 		case Qt::Key_X:
 			exit(0);

@@ -124,7 +124,8 @@ void SceneModel::Update()
 
 		// Calculate delta time to ensure movements in the world are consistent with frame time 
 		deltaTime = timer.restart() / 1000.0f;
-		
+		m_player->Forward();
+
 		// Check if the value is set to switch between follow or pilot camera
 		if(m_switchCamera)
 		{
