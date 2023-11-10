@@ -16,6 +16,7 @@ public:
     bool isCollidingWithFloor(float height);
     void Update(float dt, const columnMajorMatrix& worldMatrix, const columnMajorMatrix& viewMatrix);
     
+    // Getters for the particle to get private properties
     Cartesian3 GetPosition() const { return m_position; }
     Cartesian3 GetDirection() const  { return m_direction; }
     std::vector<Particle*> GetChildren() const { return children; }
@@ -25,6 +26,7 @@ public:
     float GetScale() const { return m_scale; }
     bool GetShouldRender() const { return shouldRender; }
 
+    // Setters for the particle to change private properties
     void SetModelMatrix(columnMajorMatrix& mat) { modelMatrix = mat; }
     void SetColor(float r, float g, float b, float a);
     void SetScale(float scale);

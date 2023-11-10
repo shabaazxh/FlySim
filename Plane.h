@@ -35,22 +35,27 @@ public:
     void PitchDown();
     void RollRight();
     void RollLeft();
-
+    // Adjust scale of the plane object
     void SetScale(float s);
     // Increase and decrease speed for the plane movement
     void IncreaseSpeed();
     void DecreaseSpeed();
+    // Set colour of the plane obejct
     void SetColor(float r, float g, float b, float a);
-
+    
+    // Getter for position, direction and up 
     Cartesian3 GetPostion() const { return m_position; }
     Cartesian3 GetDirection() const { return m_direction; }
     Cartesian3 GetUp() const { return m_up; }
 
+    // Getters for yaw, pitch and roll to get these values
     float GetYaw() const { return m_yaw; }
     float GetPitch() const { return m_pitch; }
     float GetRoll() const { return m_roll; }
 
+    // Get the current colour of the object
     const float* GetColor() { return planeColour; }
+    // Get the value of the sphere radius around the plane used for collision
     float GetCollisionSphereRadius() const { return m_collisionSphereRadius; }
 
     // Keep these private for cleaner code when using these objects in SceneModel
