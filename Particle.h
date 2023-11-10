@@ -10,6 +10,8 @@ public:
     Particle(const char *fileName, const Cartesian3& direction, float speed, float s);
     ~Particle();
 
+    // Push will apply some force to the particle to move it,
+    // Used for when particles collide with each other
     void Push(const Cartesian3& pushAmount);
     void CreateChildren();
     bool isColliding(const Particle& other);

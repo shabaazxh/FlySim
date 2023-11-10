@@ -87,6 +87,7 @@ void Particle::Update(float dt, const columnMajorMatrix& worldMatrix, const colu
 // Push a particle in the air. Used for collision between particles
 void Particle::Push(const Cartesian3& pushAmount)
 {
+    // Flexbooks (2022). CK12-Foundation. [online] flexbooks.ck12.org. Available at: https://flexbooks.ck12.org/cbook/ck-12-middle-school-physical-science-flexbook-2.0/section/11.4/primary/lesson/calculating-acceleration-from-force-and-mass-ms-ps/.
     Cartesian3 acceleration = pushAmount / mass;
     m_velocity = m_velocity + acceleration;
 }
