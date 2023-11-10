@@ -62,8 +62,8 @@ class Cartesian3
     // normalisation routine
     Cartesian3 unit() const;
 
+    // Rotate the vector around some axis using the provided angle using quaternions
     void Rotate(float angle, Cartesian3& v);    
-    columnMajorMatrix QuaternionRotation(float angle, Cartesian3& v);
     // operator that allows us to use array indexing instead of variable names
     float &operator [] (const int index);
     const float &operator [] (const int index) const;

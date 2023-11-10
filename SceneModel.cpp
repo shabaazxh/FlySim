@@ -29,7 +29,6 @@ const GLfloat sunAmbient[4] = {0.2, 0.2, 0.2, 1.0 };
 const GLfloat sunDiffuse[4] = {0.7, 0.7, 0.7, 1.0 };
 const GLfloat blackColour[4] = {0.0, 0.0, 0.0, 1.0};
 const GLfloat lavaBombColour[4] = {0.5, 0.3, 0.0, 1.0};
-const GLfloat lavaBombColour2[4] = {0.0, 0.3, 1.0, 1.0};
 const GLfloat planeColour[4] = {0.1, 0.1, 0.5, 1.0};
 const GLfloat planeRadius = 2.0;
 const GLfloat lavaBombRadius = 100.0;
@@ -44,9 +43,7 @@ SceneModel::SceneModel(float x, float y, float z)
 	{ // constructor
 	// this is not the best place to put this in general, but this is a quick and dirty hack
 	// we start by loading three files: one for each model
-	groundModel.ReadFileTerrainData(groundModelName, 500);
-	planeModel.ReadFileTriangleSoup(planeModelName);
-	
+	groundModel.ReadFileTerrainData(groundModelName, 500);	
 //	When modelling, z is commonly used for "vertical" with x-y used for "horizontal"
 //	When rendering, the default is that we render using screen coordinates, so x is to the right,
 //	y is up, and z points behind us by the right hand rule.  That means when looking into the screen,
@@ -70,12 +67,12 @@ SceneModel::SceneModel(float x, float y, float z)
 	m_camera = new Camera(Cartesian3(0.0f, 0.0f, 0.0f), Cartesian3(0.0f,0.0f, -1.0f), CameraMode::Pilot);
 	m_player = new Plane("./models/planeModel.tri", Cartesian3(x, y, z), 200.f, false, PlaneRole::Controller);
 
-	Plane* plane1 = new Plane("./models/planeModel.tri", Cartesian3(0.0f, 4000.0f, 0.0f), 344.0f, true, PlaneRole::Particle);
-	Plane* plane2 = new Plane("./models/planeModel.tri", Cartesian3(0.0f, 4000.0f, 0.0f), 344.0f, false, PlaneRole::Particle);
+	Plane* plane1 = new Plane("./models/planeModel.tri", Cartesian3(0.0f, 4000.0f, 0.0f), 344.0f, true, PlaneRole::AI);
+	Plane* plane2 = new Plane("./models/planeModel.tri", Cartesian3(0.0f, 4000.0f, 0.0f), 344.0f, false, PlaneRole::AI);
 	planes.push_back(plane1);
 	planes.push_back(plane2);
 
-	m_switchCamera = false; // start by using pilot camera
+	m_switchCamera = false; // start by using pilot camera, set follow camera to false
 
 	// Seed for random number generation 
 	// Will use this to change planes to random colour when they collide
@@ -96,22 +93,28 @@ SceneModel::~SceneModel()
 	for(int i = 0; i < particles.size(); i++)
 	{
 		delete particles[i];
+		particles[i] = nullptr;
 	}
 
 	for(int i = 0; i < planes.size(); i++)
 	{
 		delete planes[i];
+		planes[i] = nullptr;
 	}
 
 	delete m_camera;
+	m_camera = nullptr;
 }
 
+// Called in the constructor of the SceneModel to set up random directions
 void SceneModel::RandomDirections()
-{
+{	
+	// Create randomised directions for lava bombs 
+	// Store directions into vector 
 	for(int i = 0; i < RANDOM_AMOUNT; i++)
 	{	
-		auto newdir = RandomUnitVectorInUpwardsCone(45.0f, 0.0, 1.0f);
-		random_directions.push_back(newdir);
+		auto direction = RandomUnitVectorInUpwardsCone(45.0f, 0.0, 1.0f);
+		random_directions.push_back(direction);
  	}
 }
 
@@ -141,14 +144,14 @@ void SceneModel::Update()
 			m_camera->SetUp(m_player->GetUp());
 		} else {
 			// Get some distance behind the plane and set the camera to look down from above to follow the plane
-			auto pos = m_player->GetPostion() - Cartesian3(300.0f, -300.0f, 300.0f);
+			auto position = m_player->GetPostion() - Cartesian3(300.0f, -300.0f, 300.0f);
 			
 			// Use new position to calculate distance to player 
-			auto dist = m_player->GetPostion() - pos;
+			auto dist = m_player->GetPostion() - position;
 			dist = dist.unit(); // normalize 
 
 			// Set camera to the new position and direction
-			m_camera->SetPosition(pos);
+			m_camera->SetPosition(position);
 			m_camera->SetDirection(dist);
 		}
 
@@ -209,6 +212,7 @@ void SceneModel::Update()
 				groundModel.EditMesh(Cartesian3(end.x, end.y, end.z), 1.1f * 100.0f, groundMatrix);
 				particle->SetColor(0.2f, 0.3f, 0.7f, 1.0f); // change colour when hitting the floor (this is mostly unnoticeable but when visible looks good)
 				groundModel.ComputeUnitNormalVectors(); //re-compute normals since ground mesh has changed to ensure lighting looks correct
+				particle->SetShouldRender(false); // if the particle hit the floor, it expires
 			}
 		}
 
@@ -225,7 +229,7 @@ void SceneModel::Update()
 		{
 			for(int j = i + 1; j < planes.size(); j++)
 			{
-				if(planes[i]->isColliding(*planes[j]))
+				if(planes[i]->isCollidingWithAnotherPlane(*planes[j]))
 				{
 					// When planes collide, they change colour.
 					// I decided to do this instead of destroying them when they crashed since
@@ -243,6 +247,16 @@ void SceneModel::Update()
 					float randBlue2 = static_cast<float>(rand()) / RAND_MAX; 
 					planes[j]->SetColor(randRed2, randGreen2, randBlue2, 1.0f);
 				}
+			}
+		}
+
+		// Check if the player plane collided with another plane in the scene
+		for(auto& plane : planes)
+		{
+			if(m_player->isCollidingWithAnotherPlane(*plane))
+			{
+				std::cout << "You crashed into another plane. " << std::endl;
+				exit(0); // exit the program if player plane hits another plane
 			}
 		}
 
@@ -359,10 +373,7 @@ void SceneModel::Render()
 			glMaterialfv(GL_FRONT, GL_SPECULAR, blackColour);
 			glMaterialfv(GL_FRONT, GL_EMISSION, blackColour);
 			
-			// Render function takes in the matrix so get the model matrix from the particle
-			// then pass it to the render function 
-			auto transformationMatrix = particles[i]->GetModelMatrix();
-			particles[i]->lavaBombModel.Render(transformationMatrix);
+			particles[i]->lavaBombModel.Render(particles[i]->modelMatrix);
 
 			// Render child particles
 			for(auto& child : particles[i]->GetChildren())
@@ -373,11 +384,7 @@ void SceneModel::Render()
 				glMaterialfv(GL_FRONT, GL_EMISSION, blackColour);
 				
 				child->SetScale(0.5f);
-				// auto matrix = m_camera->GetViewMatrix() * 
-				// columnMajorMatrix::Translate(child->GetPosition()) * 
-				// WorldMatrix * columnMajorMatrix::Scale(Cartesian3(child->GetScale(), child->GetScale(), child->GetScale()));
-				auto modelMatrix = child->GetModelMatrix();
-				child->lavaBombModel.Render(modelMatrix);
+				child->lavaBombModel.Render(child->modelMatrix);
 			}
 			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 			i++;

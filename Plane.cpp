@@ -12,17 +12,20 @@ Plane::Plane(const char *fileName, const Cartesian3& startPosition, float collis
     m_clockWise = clockwise;
 }
 
-bool Plane::isColliding(const Plane& other) 
+// Check if the plane collides with another plane in the scene
+bool Plane::isCollidingWithAnotherPlane(const Plane& other) 
 {
     float planeCollision = (m_position - other.GetPostion()).length();
     return planeCollision < (m_collisionSphereRadius + other.m_collisionSphereRadius);
 }
 
+// Check if the plane colldies with the floor which should end the game
 bool Plane::isCollidingWithFloor(float height)
 {   
     return m_position.y - m_collisionSphereRadius <= height;
 }
 
+// Check if the plane collides with a particle
 bool Plane::isCollidingWithParticle(const Particle& particle)
 {
     float distance = (m_position - particle.GetPosition()).length();
@@ -32,7 +35,8 @@ bool Plane::isCollidingWithParticle(const Particle& particle)
 void Plane::Update(float dt, const columnMajorMatrix& worldMatrix, const columnMajorMatrix& viewMatrix)
 {
     deltaTime = dt;
-    if(m_planeRole == PlaneRole::Particle)
+    // Code for when the plane is a AI type in the world 
+    if(m_planeRole == PlaneRole::AI)
     {
         Cartesian3 circleCenter = Cartesian3(0, m_position.y, 0);
 
@@ -65,13 +69,13 @@ void Plane::Update(float dt, const columnMajorMatrix& worldMatrix, const columnM
 
         // Construct model matrix to apply transformations to the object
         // Increased m_scale of the AI flying planes since it's incredibly difficult to see them with m_scale 1
-        modelMatrix = viewMatrix * columnMajorMatrix::Translate(m_position) * rotationMatrix * 
-        worldMatrix * 
-        // size increase to see plane: realistic plane size of A320 is about Length: 37 meters, Wingspan 36 meters, Height 12 meters but these values 
+        // size increased to see plane: realistic plane size of A320 is about Length: 37 meters, Wingspan 36 meters, Height 12 meters but these values 
         // are too small to see in our game so I have exaggerated the size to make it somewhat visible 
-        columnMajorMatrix::Scale(Cartesian3(m_scale, m_scale, m_scale));
+        modelMatrix = viewMatrix * columnMajorMatrix::Translate(m_position) * rotationMatrix * 
+        worldMatrix * columnMajorMatrix::Scale(Cartesian3(m_scale, m_scale, m_scale));
     } else 
     {
+        // Code for when the plane is a controller type and can be controlled by the user
         if(m_pitch >= 89.0f) m_pitch = 89.0f;
         if(m_pitch <= -89.0f) m_pitch = -89.0f;
 
@@ -107,7 +111,7 @@ void Plane::Update(float dt, const columnMajorMatrix& worldMatrix, const columnM
     }
 
 }
-
+// This function allows the colour of the object to be changed
 void Plane::SetColor(float r, float g, float b, float a)
 {
     planeColour[0] = r;
@@ -115,60 +119,64 @@ void Plane::SetColor(float r, float g, float b, float a)
     planeColour[2] = b;
     planeColour[3] = a;
 }
+// This function will change the scale of the object 
 void Plane::SetScale(float s)
 {
     m_scale = s;
 }
 // Increase the speed of the plane
+// This function will increase the speed of the plane to a maximum of 9 m/s
 void Plane::IncreaseSpeed()
 {
-    m_movementSpeed += 10.0f;
-    //m_movementSpeed = std::min(m_movementSpeed + 1.0f, 9.0f);
-    std::cout << m_movementSpeed << std::endl;
+    m_movementSpeed = std::min(m_movementSpeed + 1.0f, 9.0f);
+    std::cout << m_movementSpeed << std::endl; // print the current speed so the user knows which speed setting they're on 
 }
 // Decrease the speed of the plane
+// This function will decrease the speed of the plane to a minimum of 0 m/s
 void Plane::DecreaseSpeed()
 {   
     m_movementSpeed = std::max(m_movementSpeed - 1.0f, 0.0f);
-    std::cout << m_movementSpeed << std::endl;
+    std::cout << m_movementSpeed << std::endl; // print the current speed so the user knows which speed setting they're on 
 }
 
 // Controls for the plane
+// This moves the plane in the forward direction
 void Plane::Forward()
 {
     m_position = m_position + m_movementSpeed * m_direction;
 }
-
+// This will move the plane back
 void Plane::Back()
 {
     m_position = m_position - m_movementSpeed * m_direction;
 }
-
+// This will turn the plane to the right
 void Plane::Right()
 {
     m_yaw -= m_turnSpeed * deltaTime;
 }
-
+// This function will turn the plane to left
 void Plane::Left()
 {
     m_yaw += m_turnSpeed * deltaTime;
 }
-
+// This function will pitch the plane up 
 void Plane::PitchUp()
 {
     m_pitch += m_turnSpeed * deltaTime;
 }
-
+// This function will pitch the plane down
 void Plane::PitchDown()
 {
     m_pitch -= m_turnSpeed * deltaTime;
 }
 
+// This function will roll the plane to right
 void Plane::RollRight()
 {
     m_roll += m_turnSpeed * deltaTime;
 }
-
+// This function will roll the plane to the left
 void Plane::RollLeft()
 {
     m_roll -= m_turnSpeed * deltaTime;

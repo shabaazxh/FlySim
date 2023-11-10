@@ -97,30 +97,19 @@ Cartesian3 Cartesian3::unit() const
     return returnVal;
     } // Cartesian3::unit()
 
-
+// Benny (2014). 3DGameEngine/src/com/base/engine/core/Vector3f.java at master · BennyQBD/3DGameEngine. [online] GitHub. Available at: https://github.com/BennyQBD/3DGameEngine/blob/master/src/com/base/engine/core/Vector3f.java#L1
 void Cartesian3::Rotate(float angle, Cartesian3& v)
 {
-    Quaternion rotation(angle, v);
-    Quaternion conjugate = rotation.Conjugate();
+    Quaternion rotation(angle, v); // construct the rotation quaternion
+    Quaternion conjugate = rotation.Conjugate(); // get the conjugate of the quaternion
 
+    // Multiply the quaternions by the vector
+    // q*v*q^-1
     auto result = rotation * (*this) * conjugate;
-
-
-
+    // Update the x,y,z to the new rotated position
     this->x = result.x;
     this->y = result.y;
     this->z = result.z;
-}
-
-columnMajorMatrix Cartesian3::QuaternionRotation(float angle, Cartesian3& v)
-{
-    Quaternion rotation(angle, v);
-    Quaternion conjugate = rotation.Conjugate();
-
-    auto res = rotation * conjugate;
-
-    // i think here rotation matrix is q*q-1
-    return res.ToRotationMatrix();
 }
 
 // operator that allows us to use array indexing instead of variable names
