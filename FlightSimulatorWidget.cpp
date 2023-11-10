@@ -86,31 +86,31 @@ void FlightSimulatorWidget::keyPressEvent(QKeyEvent *event)
 		// case Qt::Key_W:
 		// 	theScene->m_player->Forward();
 		// 	break;
-		case Qt::Key_D:
+		case Qt::Key_D: // Press D to yaw to the right
 			theScene->m_player->YawRight();
 			break;
-		case Qt::Key_W:
+		case Qt::Key_W: // Press W to yaw to the left
 			theScene->m_player->YawLeft();
 			break;
-		case Qt::Key_S:
+		case Qt::Key_S: // Press S to pitch down
 			theScene->m_player->PitchDown();
 			break;
-		case Qt::Key_A:
+		case Qt::Key_A: // Press A to pitch up
 			theScene->m_player->PitchUp();
 			break;
-		case Qt::Key_Q:
+		case Qt::Key_Q: // Press Q to roll left
 			theScene->m_player->RollLeft();
 			break;
-		case Qt::Key_E:
+		case Qt::Key_E: // Press E to roll to the right
 			theScene->m_player->RollRight();
 			break;
-		case Qt::Key_Plus:
+		case Qt::Key_Plus: // Press plus button or shift and plus to increase speed
 			theScene->m_player->IncreaseSpeed();
 			break;
-		case Qt::Key_Minus:
+		case Qt::Key_Minus: // Press minus button to reduce speed
 			theScene->m_player->DecreaseSpeed();
 			break;
-		case Qt::Key_V:
+		case Qt::Key_V: // Pres V to change camera
 			theScene->SwitchCamera();
 			break;
 		case Qt::Key_X:

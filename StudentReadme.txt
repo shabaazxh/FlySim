@@ -35,7 +35,7 @@ CONTROLS
 WD: Controls yaw
 AS: Controls pitch 
 QE: Controls roll
-M: Switches to follow camera
+V: Switches to follow camera
 -: Decreases speed
 +: Increases speed (this might require you to press shift and + keys depending on keyboard)
 
