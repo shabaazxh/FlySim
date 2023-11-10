@@ -128,14 +128,14 @@ void Plane::SetScale(float s)
 // This function will increase the speed of the plane to a maximum of 9 m/s
 void Plane::IncreaseSpeed()
 {
-    m_movementSpeed = std::min(m_movementSpeed + 1.0f, 9.0f);
+    m_movementSpeed = std::min(m_movementSpeed + 1.0f, 9.0f); // allow only for a maximum of 9 m/s
     std::cout << m_movementSpeed << std::endl; // print the current speed so the user knows which speed setting they're on 
 }
 // Decrease the speed of the plane
 // This function will decrease the speed of the plane to a minimum of 0 m/s
 void Plane::DecreaseSpeed()
 {   
-    m_movementSpeed = std::max(m_movementSpeed - 1.0f, 0.0f);
+    m_movementSpeed = std::max(m_movementSpeed - 1.0f, 0.0f); // allow only a min of 0 m/s
     std::cout << m_movementSpeed << std::endl; // print the current speed so the user knows which speed setting they're on 
 }
 
