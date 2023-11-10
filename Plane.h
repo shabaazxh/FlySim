@@ -70,6 +70,7 @@ private:
     Cartesian3 m_direction;
     Cartesian3 m_up;
 
+    // Properties for AI flying plane's in the world
     float m_scale = 500.0f; // 73
     float m_flightPathRadius = 3000.0f;
     float m_angle = 0.0f;
