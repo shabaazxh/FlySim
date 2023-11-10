@@ -66,7 +66,7 @@ void Plane::Update(float dt, const columnMajorMatrix& worldMatrix, const columnM
         worldMatrix * 
         // size increase to see plane: realistic plane size of A320 is about Length: 37 meters, Wingspan 36 meters, Height 12 meters but these values 
         // are too small to see in our game so I have exaggerated the size to make it somewhat visible 
-        columnMajorMatrix::Scale(Cartesian3(500.0f, 500.0f, 500.0f));
+        columnMajorMatrix::Scale(Cartesian3(scale, scale, scale));
         //columnMajorMatrix::Scale(Cartesian3(1, -1, 1))
 
         sphereMatrix = viewMatrix * columnMajorMatrix::Translate(position) * worldMatrix * columnMajorMatrix::Scale(Cartesian3(4.0f, 4.0f, 4.0f));
@@ -129,10 +129,15 @@ void Plane::Update(float dt, const columnMajorMatrix& worldMatrix, const columnM
     }
 
 }
+void Plane::SetScale(float s)
+{
+    scale = s;
+}
 // Increase the speed of the plane
 void Plane::IncreaseSpeed()
 {
-    movementSpeed = std::min(movementSpeed + 1.0f, 9.0f);
+    movementSpeed += 10.0f;
+    //movementSpeed = std::min(movementSpeed + 1.0f, 9.0f);
     std::cout << movementSpeed << std::endl;
 }
 // Decrease the speed of the plane

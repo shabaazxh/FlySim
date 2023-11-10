@@ -24,6 +24,7 @@ public:
     // Update the movement of the plane each frame
     void Update(float dt, const columnMajorMatrix& worldMatrix, const columnMajorMatrix& viewMatrix);
 
+    void SetScale(float s);
     // Increase and decrease speed for the plane movement
     void IncreaseSpeed();
     void DecreaseSpeed();

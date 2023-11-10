@@ -52,7 +52,8 @@ OBJECTS_DIR   = ./
 
 ####### Files
 
-SOURCES       = Cartesian3.cpp \
+SOURCES       = Camera.cpp \
+		Cartesian3.cpp \
 		FlightSimulatorWidget.cpp \
 		Homogeneous4.cpp \
 		HomogeneousFaceSurface.cpp \
@@ -64,7 +65,8 @@ SOURCES       = Cartesian3.cpp \
 		Random.cpp \
 		SceneModel.cpp \
 		Terrain.cpp moc_FlightSimulatorWidget.cpp
-OBJECTS       = Cartesian3.o \
+OBJECTS       = Camera.o \
+		Cartesian3.o \
 		FlightSimulatorWidget.o \
 		Homogeneous4.o \
 		HomogeneousFaceSurface.o \
@@ -377,7 +379,8 @@ DIST          = /opt/homebrew/share/qt/mkspecs/features/spec_pre.prf \
 		/opt/homebrew/share/qt/mkspecs/features/exceptions.prf \
 		/opt/homebrew/share/qt/mkspecs/features/yacc.prf \
 		/opt/homebrew/share/qt/mkspecs/features/lex.prf \
-		A1_handout.pro Cartesian3.h \
+		A1_handout.pro Camera.h \
+		Cartesian3.h \
 		FlightSimulatorWidget.h \
 		Homogeneous4.h \
 		HomogeneousFaceSurface.h \
@@ -387,7 +390,9 @@ DIST          = /opt/homebrew/share/qt/mkspecs/features/spec_pre.prf \
 		Quaternion.h \
 		Random.h \
 		SceneModel.h \
-		Terrain.h Cartesian3.cpp \
+		Terrain.h \
+		Utils.h Camera.cpp \
+		Cartesian3.cpp \
 		FlightSimulatorWidget.cpp \
 		Homogeneous4.cpp \
 		HomogeneousFaceSurface.cpp \
@@ -1061,8 +1066,8 @@ distdir: FORCE
 	@test -d $(DISTDIR) || mkdir -p $(DISTDIR)
 	$(COPY_FILE) --parents $(DIST) $(DISTDIR)/
 	$(COPY_FILE) --parents /opt/homebrew/share/qt/mkspecs/features/data/dummy.cpp $(DISTDIR)/
-	$(COPY_FILE) --parents Cartesian3.h FlightSimulatorWidget.h Homogeneous4.h HomogeneousFaceSurface.h Matrix4.h Particle.h Plane.h Quaternion.h Random.h SceneModel.h Terrain.h $(DISTDIR)/
-	$(COPY_FILE) --parents Cartesian3.cpp FlightSimulatorWidget.cpp Homogeneous4.cpp HomogeneousFaceSurface.cpp main.cpp Matrix4.cpp Particle.cpp Plane.cpp Quaternion.cpp Random.cpp SceneModel.cpp Terrain.cpp $(DISTDIR)/
+	$(COPY_FILE) --parents Camera.h Cartesian3.h FlightSimulatorWidget.h Homogeneous4.h HomogeneousFaceSurface.h Matrix4.h Particle.h Plane.h Quaternion.h Random.h SceneModel.h Terrain.h Utils.h $(DISTDIR)/
+	$(COPY_FILE) --parents Camera.cpp Cartesian3.cpp FlightSimulatorWidget.cpp Homogeneous4.cpp HomogeneousFaceSurface.cpp main.cpp Matrix4.cpp Particle.cpp Plane.cpp Quaternion.cpp Random.cpp SceneModel.cpp Terrain.cpp $(DISTDIR)/
 
 
 clean: compiler_clean 
@@ -1141,6 +1146,12 @@ compiler_lex_clean:
 compiler_clean: compiler_moc_predefs_clean compiler_moc_header_clean 
 
 ####### Compile
+
+Camera.o: Camera.cpp Camera.h \
+		Matrix4.h \
+		Cartesian3.h \
+		Homogeneous4.h
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o Camera.o Camera.cpp
 
 Cartesian3.o: Cartesian3.cpp Cartesian3.h \
 		Quaternion.h \

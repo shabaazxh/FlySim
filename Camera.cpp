@@ -26,7 +26,7 @@ void Camera::Update()
 
 void Camera::EnableThirdPerson()
 {
-    isThirdPerson = isThirdPerson == true ? false : true;
+    isThirdPersonEnabled = isThirdPersonEnabled == true ? false : true;
 }
 
 void Camera::SetDirection(const Cartesian3& dir)

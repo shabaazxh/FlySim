@@ -134,11 +134,16 @@ void SceneModel::Update()
 			m_camera->SetUp(m_player->up);
 		} else {
 			// Get some distance behind the plane and set the camera to look down from above to follow the plane
-			auto dir = Cartesian3(-300, -2000, -300);
-			dir = dir.unit();
-			auto pos = m_player->position - Cartesian3(300, -2000.0f, 300.0f);
-			m_camera->SetPosition(m_player->position + dir);
-			m_camera->SetDirection(dir);
+
+
+			auto pos = m_player->position - Cartesian3(300.0f, 0.0f, 300.0f);
+			pos.y = pos.y + 2000.0f;
+
+			auto dist = m_player->position - pos;
+			dist = dist.unit();
+
+			m_camera->SetPosition(pos);
+			m_camera->SetDirection(dist);
 		}
 
 		// Update the camera and the player
@@ -288,21 +293,22 @@ void SceneModel::Render()
 	// If the third person camera is enabled, render some distance behind the plane
 	// otherwise the plane remains in First person mode
 	columnMajorMatrix playerMatrix;
-	if(m_camera->isThirdPerson())
-	{
-		float scale = 1.0f;
-		float distance = 10.0f;
-		Cartesian3 offset = m_camera->GetPosition() + m_camera->GetDirection().unit() * distance;
-		playerMatrix = m_camera->GetViewMatrix() * columnMajorMatrix::Translate(offset) * m_player->modelMatrix *
-		WorldMatrix * columnMajorMatrix::Scale(Cartesian3(scale, scale, scale));
-		m_player->planeModel.Render(playerMatrix);
-	} else {
-		float scale = 1.0f;
-		playerMatrix = m_camera->GetViewMatrix() * columnMajorMatrix::Translate(m_camera->GetPosition()) * m_player->modelMatrix *
-		WorldMatrix * columnMajorMatrix::Scale(Cartesian3(scale, scale, scale));
-		m_player->planeModel.Render(playerMatrix);
-	}
 
+	// if(m_camera->isThirdPerson())
+	// {
+	// 	auto direction = (m_camera->GetPosition() - m_player->position).unit();
+
+	// 	m_camera->SetDirection(direction);
+	// 	auto newposition = m_player->position  - direction * 3.0f;
+	// 	m_camera->SetPosition(newposition);
+	// }
+	// i think im setting distance from top down camera too not just main camera since there is only one
+	// when it changes to top down, it sets distance for the plane from there
+	float scale = 1.0f;
+	float distance = 3.0f;
+	Cartesian3 offset = m_camera->GetPosition() + m_camera->GetDirection().unit() * distance;
+	playerMatrix = m_camera->GetViewMatrix() * columnMajorMatrix::Translate(offset) * m_player->modelMatrix *
+	WorldMatrix * columnMajorMatrix::Scale(Cartesian3(scale, scale, scale));
 	m_player->planeModel.Render(playerMatrix);
 
 	glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, lavaBombColour);
