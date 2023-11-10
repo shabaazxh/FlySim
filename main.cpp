@@ -24,7 +24,7 @@ int main(int argc, char **argv)
 	try
 		{ // try block
 		// we want a single instance of the scene model
-		//38500, 2000, -4000
+		//38500, 2000, -4000 is near volcano
 		SceneModel theScene(0,4000,0);
 		
 		// create the widget with no parent

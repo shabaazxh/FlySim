@@ -29,6 +29,11 @@ To execute the programe:
 
 [userid@machine A1_handout]$ ./A1_handout 
 
+INFO
+====
+* Plane spawns at (0, 4000, 0), you can change this inside the main.cpp file when passing
+Arguments to the SceneModel constructor 
+
 CONTROLS
 ========
 
