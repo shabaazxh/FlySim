@@ -15,6 +15,8 @@
 #include "SceneModel.h"
 #include <math.h>
 #include <chrono>
+#include <cstdlib>
+#include <ctime>
 
 // three local variables with the hardcoded file names
 const char *groundModelName 	= "./models/landscape.dem";
@@ -75,6 +77,10 @@ SceneModel::SceneModel(float x, float y, float z)
 
 	m_switchCamera = false; // start by using pilot camera
 
+	// Seed for random number generation 
+	// Will use this to change planes to random colour when they collide
+	srand(static_cast<unsigned int>(time(0)));
+
 	RandomDirections();
 
 	// Start the timer to calculatr deltaTime 
@@ -129,16 +135,16 @@ void SceneModel::Update()
 		{
 			// Since camera is in pilot mode, have camera mimic the plane movement
 			// Set same position, direction and pass yaw, pitch and roll to have camera behave the same
-			m_camera->SetPosition(m_player->position);
-			m_camera->SetDirection(m_player->direction);
-			m_camera->SetRotations(m_player->yaw, m_player->pitch, m_player->roll);
-			m_camera->SetUp(m_player->up);
+			m_camera->SetPosition(m_player->GetPostion());
+			m_camera->SetDirection(m_player->GetDirection());
+			m_camera->SetRotations(m_player->GetYaw(), m_player->GetPitch(), m_player->GetRoll());
+			m_camera->SetUp(m_player->GetUp());
 		} else {
 			// Get some distance behind the plane and set the camera to look down from above to follow the plane
-			auto pos = m_player->position - Cartesian3(300.0f, -1000.0f, 300.0f);
+			auto pos = m_player->GetPostion() - Cartesian3(300.0f, -300.0f, 300.0f);
 			
 			// Use new position to calculate distance to player 
-			auto dist = m_player->position - pos;
+			auto dist = m_player->GetPostion() - pos;
 			dist = dist.unit(); // normalize 
 
 			// Set camera to the new position and direction
@@ -148,12 +154,20 @@ void SceneModel::Update()
 
 		// Update the camera and the player
 		m_camera->Update();
-		m_player->Update(deltaTime, WorldMatrix, viewMatrix);
+		m_player->Update(deltaTime, WorldMatrix, m_camera->GetViewMatrix());
 
-		// Update particles data over each frame to ensure the physics calculations are correct
+		// Update particles data over each frame to ensure calculations are correct
 		for(int i = 0; i < particles.size(); i++)
 		{
 			particles[i]->Update(deltaTime, WorldMatrix, m_camera->GetViewMatrix());
+			// Update child particles for the particle to ensure they have the data required to render
+			if(particles[i]->GetChildren().size() > 0) // safety check incase we don't want child smoke particles, we dont want to try and update nullptr's
+			{
+				for(auto& child : particles[i]->GetChildren())
+				{
+					child->Update(deltaTime, WorldMatrix, m_camera->GetViewMatrix());
+				}
+			}
 		}
 
 		// PARTICLE TO PARTICLE COLLISION - Check if particles collide with each other, if they do, add some push force to them and change 
@@ -198,21 +212,36 @@ void SceneModel::Update()
 			}
 		}
 
+		// Call update for the plane objects to give them latest
+		// deltatime view and world matrices
 		for(int i = 0; i < planes.size(); i++)
 		{
 			planes[i]->Update(deltaTime, WorldMatrix, m_camera->GetViewMatrix());
 		}
 
-		// Check if the planes flying in the air are colliding with one another 
+		// Check if the planes flying in the air are colliding with one another
+		// If so, give the colliding planes a random generated color r,g,b 
 		for(int i = 0; i < planes.size(); i++)
 		{
 			for(int j = i + 1; j < planes.size(); j++)
 			{
 				if(planes[i]->isColliding(*planes[j]))
 				{
-					std::cout << "Plane collision!" << std::endl;
-					// planes[i]->shouldRender = false;
-					// planes[j]->shouldRender = false;
+					// When planes collide, they change colour.
+					// I decided to do this instead of destroying them when they crashed since
+					// that would require a restart of the game if you missed it, this way the collision can 
+					// continiously be observed 
+					// Assign a random color to the first plane
+					float randRed = static_cast<float>(rand()) / RAND_MAX; 
+					float randGreen = static_cast<float>(rand()) / RAND_MAX; 
+					float randBlue = static_cast<float>(rand()) / RAND_MAX; 
+					planes[i]->SetColor(randRed, randGreen, randBlue, 1.0f);
+
+					// Assign a different random color to the second plane
+					float randRed2 = static_cast<float>(rand()) / RAND_MAX; 
+					float randGreen2 = static_cast<float>(rand()) / RAND_MAX; 
+					float randBlue2 = static_cast<float>(rand()) / RAND_MAX; 
+					planes[j]->SetColor(randRed2, randGreen2, randBlue2, 1.0f);
 				}
 			}
 		}
@@ -229,7 +258,7 @@ void SceneModel::Update()
 		}
 
 		// Check the players collision with the floor. If they collide, exit the game 
-		if(m_player->isCollidingWithFloor(groundModel.getHeight(m_player->position.x, m_player->position.z)))
+		if(m_player->isCollidingWithFloor(groundModel.getHeight(m_player->GetPostion().x, m_player->GetPostion().z)))
 		{
 			std::cout << "You hit the floor and crashed the plane." << std::endl;
 			exit(0);
@@ -239,6 +268,7 @@ void SceneModel::Update()
 // routine to tell the scene to render itself
 void SceneModel::Render()
 	{ // Render()
+
 	// enable Z-buffering
 	glEnable(GL_DEPTH_TEST);
 	
@@ -285,40 +315,38 @@ void SceneModel::Render()
 	groundMatrix = m_camera->GetViewMatrix() * WorldMatrix * columnMajorMatrix::Scale(Cartesian3(1, 1, -1));
 	groundModel.Render(groundMatrix);
 
-	// translate, rotate, scale
+	// Render the player
 	glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, planeColour);
 	glMaterialfv(GL_FRONT, GL_SPECULAR, blackColour);
 	glMaterialfv(GL_FRONT, GL_EMISSION, blackColour);
-
 	columnMajorMatrix playerMatrix;
-	if(m_camera->GetCameraMode() == CameraMode::Follow)
+
+	// Scale the player object up if the in follow camera otherwise it's incredibly hard to see
+	if(m_camera->GetCameraMode() == CameraMode::Follow) 
 	{
-		float scale = 1.0f;
-		Cartesian3 offset = m_camera->GetPosition() + m_camera->GetDirection().unit();
-		playerMatrix = m_camera->GetViewMatrix() * columnMajorMatrix::Translate(offset) * m_player->modelMatrix *
-		WorldMatrix * columnMajorMatrix::Scale(Cartesian3(scale, scale, scale));
-		m_player->planeModel.Render(playerMatrix);
+		m_player->SetScale(72.0f);
 	} else 
 	{
-		float scale = 1.0f;
-		Cartesian3 offset = m_camera->GetPosition() + m_camera->GetDirection().unit();
-		playerMatrix = m_camera->GetViewMatrix() * columnMajorMatrix::Translate(offset) * m_player->modelMatrix *
-		WorldMatrix * columnMajorMatrix::Scale(Cartesian3(scale, scale, scale));
-		m_player->planeModel.Render(playerMatrix);
+		m_player->SetScale(1.0f);
 	}
+		
+	m_player->planeModel.Render(m_player->modelMatrix);
+	
+	// Render lava bombs
 	glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, lavaBombColour);
 	glMaterialfv(GL_FRONT, GL_SPECULAR, blackColour);
 	glMaterialfv(GL_FRONT, GL_EMISSION, blackColour);
 
+	// Set a timer to count 3 seconds and then spawn a new lava bomb
 	auto curr = std::chrono::high_resolution_clock::now();
 	float timeSinceLastSpawn = std::chrono::duration<float, std::chrono::seconds::period>(curr - lastSpawnTime).count();
 	if(timeSinceLastSpawn >= 3.0f)
 	{	
 		Particle* p = new Particle("./models/lavaBombModel.tri", random_directions[lastIndex], 2.0f, 1.0f);
-		p->CreateChildren();
+		p->CreateChildren(); // create children creates a smoke like particle effect
 		particles.push_back(p);
-		lastSpawnTime = curr;
-		lastIndex >= random_directions.size() ? lastIndex = 0 : lastIndex++;
+		lastSpawnTime = curr; // set the spawn time
+		lastIndex >= random_directions.size() ? lastIndex = 0 : lastIndex++; // prepare a new position for next lava bomb
 	}
 
 	// Loop through all particles and render them
@@ -331,6 +359,8 @@ void SceneModel::Render()
 			glMaterialfv(GL_FRONT, GL_SPECULAR, blackColour);
 			glMaterialfv(GL_FRONT, GL_EMISSION, blackColour);
 			
+			// Render function takes in the matrix so get the model matrix from the particle
+			// then pass it to the render function 
 			auto transformationMatrix = particles[i]->GetModelMatrix();
 			particles[i]->lavaBombModel.Render(transformationMatrix);
 
@@ -343,10 +373,11 @@ void SceneModel::Render()
 				glMaterialfv(GL_FRONT, GL_EMISSION, blackColour);
 				
 				child->SetScale(0.5f);
-				auto matrix = m_camera->GetViewMatrix() * 
-				columnMajorMatrix::Translate(child->GetPosition()) * 
-				WorldMatrix * columnMajorMatrix::Scale(Cartesian3(child->GetScale(), child->GetScale(), child->GetScale()));
-				child->lavaBombModel.Render(matrix);
+				// auto matrix = m_camera->GetViewMatrix() * 
+				// columnMajorMatrix::Translate(child->GetPosition()) * 
+				// WorldMatrix * columnMajorMatrix::Scale(Cartesian3(child->GetScale(), child->GetScale(), child->GetScale()));
+				auto modelMatrix = child->GetModelMatrix();
+				child->lavaBombModel.Render(modelMatrix);
 			}
 			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 			i++;
@@ -357,24 +388,13 @@ void SceneModel::Render()
 		}
 	}
 
-	glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, planeColour);
-	glMaterialfv(GL_FRONT, GL_SPECULAR, blackColour);
-	glMaterialfv(GL_FRONT, GL_EMISSION, blackColour);
-
+	// Render AI like planes in the sky 
 	for(int i = 0; i < planes.size(); i++)
 	{
-		if(planes[i]->shouldRender == true)
-		{
-			planes[i]->planeModel.Render(planes[i]->modelMatrix);
-
-			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-			glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, lavaBombColour2);
-			glMaterialfv(GL_FRONT, GL_SPECULAR, blackColour);
-			glMaterialfv(GL_FRONT, GL_EMISSION, blackColour);
-			planes[i]->Sphere.Render(planes[i]->sphereMatrix); // render the collision sphere for the plane
-
-			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-		}
+		glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, planes[i]->GetColor());
+		glMaterialfv(GL_FRONT, GL_SPECULAR, blackColour);
+		glMaterialfv(GL_FRONT, GL_EMISSION, blackColour);
+		planes[i]->planeModel.Render(planes[i]->modelMatrix);
 	}
 } // Render()	
 

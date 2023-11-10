@@ -7,7 +7,7 @@
 class Particle
 {
 public:
-    Particle(const char *fileName, const Cartesian3& direction, float speed, float r);
+    Particle(const char *fileName, const Cartesian3& direction, float speed, float s);
     ~Particle();
 
     void Push(const Cartesian3& pushAmount);
@@ -27,13 +27,12 @@ public:
     void SetModelMatrix(columnMajorMatrix& mat) { modelMatrix = mat; }
     void SetColor(float r, float g, float b, float a);
     void SetScale(float scale);
-    float GetScale() const { return radius; }
+    float GetScale() const { return m_scale; }
     bool GetShouldRender() const { return shouldRender; }
     void SetShouldRender(bool value) { shouldRender = value; }
 
     // Rendering models remain public 
     HomogeneousFaceSurface lavaBombModel;
-    HomogeneousFaceSurface Sphere;
 private:
 
     Cartesian3 position;
@@ -42,7 +41,7 @@ private:
     float mass;
     //-9.81
     float gravity;
-    float radius = 0.0f;
+    float m_scale = 0.0f;
     float collisionSphereRadius = 86.0f;
     float angle = 0.0f;
     float lavaBombColour[4] = {0.5, 0.3, 0.0, 1.0};

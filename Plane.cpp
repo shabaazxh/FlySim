@@ -3,32 +3,30 @@
 Plane::Plane(const char *fileName, const Cartesian3& startPosition, float collisionRadius, bool clockwise, const PlaneRole& role)
 {
     planeModel.ReadFileTriangleSoup(fileName);
-    // This is for debug to see size of the collision "sphere"
-    Sphere.ReadFileTriangleSoup("./models/lavaBombModel.tri");
 
-    position = startPosition;
-    forward = Cartesian3(-1, 0, 0);
-    up = Cartesian3(0, 1, 0);
-    collisionSphereRadius = collisionRadius;
+    m_position = startPosition;
+    m_forward = Cartesian3(-1, 0, 0);
+    m_up = Cartesian3(0, 1, 0);
+    m_collisionSphereRadius = collisionRadius;
     m_planeRole = role;
     m_clockWise = clockwise;
 }
 
 bool Plane::isColliding(const Plane& other) 
 {
-    float planeCollision = (position - other.position).length();
-    return planeCollision < (collisionSphereRadius + other.collisionSphereRadius);
+    float planeCollision = (m_position - other.GetPostion()).length();
+    return planeCollision < (m_collisionSphereRadius + other.m_collisionSphereRadius);
 }
 
 bool Plane::isCollidingWithFloor(float height)
 {   
-    return position.y - collisionSphereRadius <= height;
+    return m_position.y - m_collisionSphereRadius <= height;
 }
 
 bool Plane::isCollidingWithParticle(const Particle& particle)
 {
-    float distance = (position - particle.GetPosition()).length();
-    return distance < (collisionSphereRadius + particle.GetCollisionSphereRadius());
+    float distance = (m_position - particle.GetPosition()).length();
+    return distance < (m_collisionSphereRadius + particle.GetCollisionSphereRadius());
 }
 
 void Plane::Update(float dt, const columnMajorMatrix& worldMatrix, const columnMajorMatrix& viewMatrix)
@@ -36,157 +34,142 @@ void Plane::Update(float dt, const columnMajorMatrix& worldMatrix, const columnM
     deltaTime = dt;
     if(m_planeRole == PlaneRole::Particle)
     {
-        Cartesian3 circleCenter = Cartesian3(0, position.y, 0);
+        Cartesian3 circleCenter = Cartesian3(0, m_position.y, 0);
 
         // Take cos and sin to get x and z for the flight path 
-        float x = flightPathRadius * cos(angle);
-        float z = flightPathRadius * sin(angle);
+        float x = m_flightPathRadius * cos(m_angle);
+        float z = m_flightPathRadius * sin(m_angle);
 
         // auto angularSpeed = speed / flightPathRadius; // to correctly move the plane around using it's speed and radius of circle
-        auto angularSpeed = 0.7f; // setting it to a small value so  the planes move slower. This will allow plane collision to be seen
-        angle += (m_clockWise ? -1 : 1) * angularSpeed * dt; //
+        auto angularSpeed = 0.2f; // setting it to a small value so  the planes move slower. This will allow plane collision to be seen
+        m_angle += (m_clockWise ? -1 : 1) * angularSpeed * dt; //
 
         // Ensure angles being used for circular path remain within 0 - 2pi radians
-        if(angle > 2 * M_PI)
+        if(m_angle > 2 * M_PI)
         {
-            angle -= 2 * M_PI;
+            m_angle -= 2 * M_PI;
         }
 
-        if(angle < 0)
+        if(m_angle < 0)
         {
-            angle += 2 * M_PI;
+            m_angle += 2 * M_PI;
         }
-        // Calculate the next direction based on the previous position and current position
-        previousPosition = position;
-        position = circleCenter + Cartesian3(x, 0.0f, z);    
-        direction = position - previousPosition;
-        direction = direction.unit();
-        // Construct the rotation look matrix to ensure the plane looks in the correct direction
+        // Calculate the next m_direction based on the previous position and current position
+        m_previousPosition = m_position;
+        m_position = circleCenter + Cartesian3(x, 0.0f, z);    
+        m_direction = m_position - m_previousPosition;
+        m_direction = m_direction.unit();
+        // Construct the rotation look matrix to ensure the plane looks in the correct m_direction
         // when flying around the circular flight path
-        auto rotationMatrix = columnMajorMatrix::Look(position, position + direction, Cartesian3(0, 1, 0));
+        auto rotationMatrix = columnMajorMatrix::Look(m_position, m_position + m_direction, Cartesian3(0, 1, 0));
 
         // Construct model matrix to apply transformations to the object
-        // Increased scale of the AI flying planes since it's incredibly difficult to see them with scale 1
-        modelMatrix = viewMatrix * columnMajorMatrix::Translate(position) * rotationMatrix * 
+        // Increased m_scale of the AI flying planes since it's incredibly difficult to see them with m_scale 1
+        modelMatrix = viewMatrix * columnMajorMatrix::Translate(m_position) * rotationMatrix * 
         worldMatrix * 
         // size increase to see plane: realistic plane size of A320 is about Length: 37 meters, Wingspan 36 meters, Height 12 meters but these values 
         // are too small to see in our game so I have exaggerated the size to make it somewhat visible 
-        columnMajorMatrix::Scale(Cartesian3(scale, scale, scale));
-        sphereMatrix = viewMatrix * columnMajorMatrix::Translate(position) * worldMatrix * columnMajorMatrix::Scale(Cartesian3(4.0f, 4.0f, 4.0f));
+        columnMajorMatrix::Scale(Cartesian3(m_scale, m_scale, m_scale));
     } else 
     {
-        if(pitch >= 89.0f) pitch = 89.0f;
-        if(pitch <= -89.0f) pitch = -89.0f;
+        if(m_pitch >= 89.0f) m_pitch = 89.0f;
+        if(m_pitch <= -89.0f) m_pitch = -89.0f;
 
-        // Use forward to rotate forward with yaw
+        // Use forward to rotate forward with m_yaw
         auto up = Cartesian3(0, 1, 0);
         auto forward = Cartesian3(0,0,-1);
         
-        // Apply yaw rotation
-        forward.Rotate(yaw, up);
+        // Apply m_yaw rotation
+        forward.Rotate(m_yaw, up);
         forward = forward.unit();
 
-        // Calculate x direction and rotate forward using pitch
+        // Calculate x m_direction and rotate forward using m_pitch
         Cartesian3 x = up;
         x = x.cross(forward);
         x = x.unit();
-        forward.Rotate(pitch, x);
+        forward.Rotate(m_pitch, x);
         forward = forward.unit();
         
         // Find new up
         Cartesian3 u = forward.cross(x);
         u = u.unit();
 
-        u.Rotate(roll, forward);
+        u.Rotate(m_roll, forward);
         u = u.unit();
 
-        // Set camera direction and up
-        direction = forward;
+        // Set camera m_direction and up
+        m_direction = forward;
         up = u;
 
-        // direction.x = std::cos(DEG2RAD(yaw)) * std::cos(DEG2RAD(pitch));
-        // direction.y = std::sin(DEG2RAD(pitch));
-        // direction.z = std::sin(DEG2RAD(yaw)) * std::cos(DEG2RAD(pitch));
-        // direction = direction.unit();
-
-        // auto right = Cartesian3(0.0f, 1.0f, 0.0f).cross(direction);
-        // right = right.unit();
-
-        // up = direction.cross(right);
-        // up = up.unit();
-
-        // if(roll != 0)
-        // {
-        //     auto rollMatrix = columnMajorMatrix::Rotate(roll,
-        //     direction);
-
-        //     auto tempUp = rollMatrix * up;
-        //     auto tempRight = rollMatrix * right;
-
-        //     up = Cartesian3(tempUp.x, tempUp.y, tempUp.z);
-        //     right = Cartesian3(tempRight.x, tempRight.y, tempRight.z);
-        // }
-
-        auto look = columnMajorMatrix::Look(position, position + direction, up);
-        modelMatrix = look;
+        // construct look matrix using new m_direction 
+        auto look = columnMajorMatrix::Look(m_position, m_position + m_direction, up);
+        modelMatrix = viewMatrix * columnMajorMatrix::Translate(m_position) * look * worldMatrix * columnMajorMatrix::Scale(Cartesian3(m_scale,m_scale,m_scale));
     }
 
 }
+
+void Plane::SetColor(float r, float g, float b, float a)
+{
+    planeColour[0] = r;
+    planeColour[1] = g;
+    planeColour[2] = b;
+    planeColour[3] = a;
+}
 void Plane::SetScale(float s)
 {
-    scale = s;
+    m_scale = s;
 }
 // Increase the speed of the plane
 void Plane::IncreaseSpeed()
 {
-    movementSpeed += 10.0f;
-    //movementSpeed = std::min(movementSpeed + 1.0f, 9.0f);
-    std::cout << movementSpeed << std::endl;
+    m_movementSpeed += 10.0f;
+    //m_movementSpeed = std::min(m_movementSpeed + 1.0f, 9.0f);
+    std::cout << m_movementSpeed << std::endl;
 }
 // Decrease the speed of the plane
 void Plane::DecreaseSpeed()
 {   
-    movementSpeed = std::max(movementSpeed - 1.0f, 0.0f);
-    std::cout << movementSpeed << std::endl;
+    m_movementSpeed = std::max(m_movementSpeed - 1.0f, 0.0f);
+    std::cout << m_movementSpeed << std::endl;
 }
 
 // Controls for the plane
 void Plane::Forward()
 {
-    position = position + movementSpeed * direction;
+    m_position = m_position + m_movementSpeed * m_direction;
 }
 
 void Plane::Back()
 {
-    position = position - movementSpeed * direction;
+    m_position = m_position - m_movementSpeed * m_direction;
 }
 
 void Plane::Right()
 {
-    yaw -= turnSpeed * deltaTime;
+    m_yaw -= m_turnSpeed * deltaTime;
 }
 
 void Plane::Left()
 {
-    yaw += turnSpeed * deltaTime;
+    m_yaw += m_turnSpeed * deltaTime;
 }
 
 void Plane::PitchUp()
 {
-    pitch += turnSpeed * deltaTime;
+    m_pitch += m_turnSpeed * deltaTime;
 }
 
 void Plane::PitchDown()
 {
-    pitch -= turnSpeed * deltaTime;
+    m_pitch -= m_turnSpeed * deltaTime;
 }
 
 void Plane::RollRight()
 {
-    roll += turnSpeed * deltaTime;
+    m_roll += m_turnSpeed * deltaTime;
 }
 
 void Plane::RollLeft()
 {
-    roll -= turnSpeed * deltaTime;
+    m_roll -= m_turnSpeed * deltaTime;
 }

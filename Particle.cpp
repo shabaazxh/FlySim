@@ -1,16 +1,15 @@
 #include "Particle.h"
 
-Particle::Particle(const char *fileName, const Cartesian3& direction, float speed, float r)
+Particle::Particle(const char *fileName, const Cartesian3& direction, float speed, float s)
 {
         lavaBombModel.ReadFileTriangleSoup(fileName);
-        Sphere.ReadFileTriangleSoup(fileName);
 
         this->direction = direction;
         position = Cartesian3(-38500.0f, 1000.0f, -4000); // default position
         velocity.x = direction.x;
         velocity.y = direction.y;
         velocity.z = direction.z;
-        radius = r;
+        m_scale = s;
         gravity = -19.81f;
         mass = 1.0f;
         shouldRender = true;
@@ -25,6 +24,7 @@ Particle::~Particle()
         if(child != nullptr)
         {
             delete child;
+            child = nullptr;
         }
     }
 }
@@ -88,7 +88,7 @@ void Particle::Update(float dt, const columnMajorMatrix& worldMatrix, const colu
         children[i]->velocity = velocity;
     }
     
-    modelMatrix = viewMatrix * columnMajorMatrix::Translate(position) * worldMatrix * columnMajorMatrix::Scale(Cartesian3(radius, radius, radius));
+    modelMatrix = viewMatrix * columnMajorMatrix::Translate(position) * worldMatrix * columnMajorMatrix::Scale(Cartesian3(m_scale, m_scale, m_scale));
 }
 
 // Push a particle in the air. Used for collision between particles
@@ -108,7 +108,7 @@ bool Particle::isColliding(const Particle& other)
 // Check if the particle is colliding with the floor
 bool Particle::isCollidingWithFloor(float height)
 {   
-    return position.y - radius <= height;
+    return position.y - m_scale <= height;
 }
 
 
@@ -122,6 +122,6 @@ void Particle::SetColor(float r, float g, float b, float a)
 
 void Particle::SetScale(float scale)
 {
-    radius = scale;
+    m_scale = scale;
 }
 

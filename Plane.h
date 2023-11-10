@@ -2,7 +2,7 @@
 #include "Particle.h"
 
 // Define enum class so per plane object we can define it's role and
-// adjust behaviour automtically 
+// adjust behaviour accordingly  
 enum class PlaneRole
 {
     Particle,
@@ -10,7 +10,9 @@ enum class PlaneRole
 };
 // Plane class defined can be used to create plane flying AI or player controlled plane
 // Since we have a simple game and we know the exact objects the game will have we can use one class for both player 
-// and in-game plane AI
+// and in-game plane AI. Since the player is the plane, seperate classes will share the same attributes
+// unnecessarily expanding the code base. Defining the class in it's current format allows us to expand
+// the game in the future, to let the player control any plane in the scene
 class Plane
 {
 public:
@@ -28,6 +30,8 @@ public:
     // Increase and decrease speed for the plane movement
     void IncreaseSpeed();
     void DecreaseSpeed();
+    void SetColor(float r, float g, float b, float a);
+    const float* GetColor() { return planeColour; }
 
     // Controls for the movement of the plane
     void Forward();
@@ -39,33 +43,38 @@ public:
     void RollRight();
     void RollLeft();
 
-    HomogeneousFaceSurface planeModel;
-    HomogeneousFaceSurface Sphere;
-    columnMajorMatrix modelMatrix;
-    columnMajorMatrix sphereMatrix;
-    PlaneRole m_planeRole; // store the role of the plane, behaviour is different depending on what the plane should be having like
-    Cartesian3 position; 
-    Cartesian3 previousPosition;
-    Cartesian3 forward;
-    Cartesian3 direction;
-    Cartesian3 up;
+    Cartesian3 GetPostion() const { return m_position; }
+    Cartesian3 GetDirection() const { return m_direction; }
+    Cartesian3 GetUp() const { return m_up; }
 
-    float scale = 500.0f; // 73
-    float flightPathRadius = 3000.0f;
-    float angle = 0.0f;
-    float speed = 900.0f;
-    float startingAngleOffset;
+    float GetYaw() const { return m_yaw; }
+    float GetPitch() const { return m_pitch; }
+    float GetRoll() const { return m_roll; }
+
+    HomogeneousFaceSurface planeModel;
+    columnMajorMatrix modelMatrix;
+private:
+    PlaneRole m_planeRole; // store the role of the plane, behaviour is different depending on what the plane should be having like
+    Cartesian3 m_position; 
+    Cartesian3 m_previousPosition;
+    Cartesian3 m_forward;
+    Cartesian3 m_direction;
+    Cartesian3 m_up;
+
+    float m_scale = 500.0f; // 73
+    float m_flightPathRadius = 3000.0f;
+    float m_angle = 0.0f;
+    float m_speed = 900.0f;
     bool m_clockWise;
 
     // Controllable player movement 
-    float movementSpeed = 0.0f;
-    float turnSpeed = 500.0f;
-    float pitch = 0.0f;
-    float yaw = 0.0f;
-    float roll = 0.0f;
+    float m_movementSpeed = 0.0f;
+    float m_turnSpeed = 500.0f;
+    float m_pitch = 0.0f;
+    float m_yaw = 0.0f;
+    float m_roll = 0.0f;
 
-    float collisionSphereRadius = 86.0f; // default collision sphere radius
-    float lavaBombColour[4] = {0.5, 0.3, 0.0, 1.0};
-    bool shouldRender = true;
+    float m_collisionSphereRadius = 86.0f; // default collision sphere radius
+    float planeColour[4] = {0.5, 0.3, 0.0, 1.0};
     float deltaTime;
 };
