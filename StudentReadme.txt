@@ -28,3 +28,25 @@ You should see a compiler warning about an unused parameter, which can be ignore
 To execute the programe:
 
 [userid@machine A1_handout]$ ./A1_handout 
+
+CONTROLS
+========
+
+WD: Controls yaw
+AS: Controls pitch 
+QE: Controls roll
+M: Switches to follow camera
+-: Decreases speed
++: Increases speed (this might require you to press shift and + keys depending on keyboard)
+
+Player collisions:
+=================
+* Ground collision
+* Lava bomb collision
+* Collision with other planes in the scene
+
+World collisions:
+=================
+* AI planes collide into each other; when they do, they change colour (this is to make sure you always have a chance to see the collision instead of destroying them and having to restart game to see it)
+* Lava bombs collide with terrain, damaging it.
+* Lava bombs collide with each other, pushing each other, causing change of colour

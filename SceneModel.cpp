@@ -123,8 +123,9 @@ void SceneModel::Update()
 	{ // Update()
 
 		// Calculate delta time to ensure movements in the world are consistent with frame time 
+		// https://doc.qt.io/qt-6/qelapsedtimer.html
 		deltaTime = timer.restart() / 1000.0f;
-		m_player->Forward();
+		m_player->Forward(); // move the player forward each frame
 
 		// Check if the value is set to switch between follow or pilot camera
 		if(m_switchCamera)

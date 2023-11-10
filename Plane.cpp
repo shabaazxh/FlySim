@@ -145,20 +145,15 @@ void Plane::Forward()
 {
     m_position = m_position + m_movementSpeed * m_direction;
 }
-// This will move the plane back
-void Plane::Back()
-{
-    m_position = m_position - m_movementSpeed * m_direction;
-}
 // multiplying by deltaTime is used to ensure no matter the frame rate of the game,
 // movement is consisntent on all computers whether they achieve higher frames or not
 // This will turn the plane to the right
-void Plane::Right()
+void Plane::YawRight()
 {
     m_yaw -= m_turnSpeed * deltaTime;
 }
 // This function will turn the plane to left
-void Plane::Left()
+void Plane::YawLeft()
 {
     m_yaw += m_turnSpeed * deltaTime;
 }

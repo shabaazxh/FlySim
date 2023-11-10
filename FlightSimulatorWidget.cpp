@@ -87,10 +87,10 @@ void FlightSimulatorWidget::keyPressEvent(QKeyEvent *event)
 		// 	theScene->m_player->Forward();
 		// 	break;
 		case Qt::Key_D:
-			theScene->m_player->Right();
+			theScene->m_player->YawRight();
 			break;
 		case Qt::Key_W:
-			theScene->m_player->Left();
+			theScene->m_player->YawLeft();
 			break;
 		case Qt::Key_S:
 			theScene->m_player->PitchDown();

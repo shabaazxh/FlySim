@@ -28,9 +28,8 @@ public:
 
     // Controls for the movement of the plane
     void Forward();
-    void Back();
-    void Right();
-    void Left();
+    void YawRight();
+    void YawLeft();
     void PitchUp();
     void PitchDown();
     void RollRight();
