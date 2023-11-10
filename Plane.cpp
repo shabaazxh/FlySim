@@ -150,6 +150,8 @@ void Plane::Back()
 {
     m_position = m_position - m_movementSpeed * m_direction;
 }
+// multiplying by deltaTime is used to ensure no matter the frame rate of the game,
+// movement is consisntent on all computers whether they achieve higher frames or not
 // This will turn the plane to the right
 void Plane::Right()
 {

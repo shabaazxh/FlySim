@@ -79,7 +79,7 @@ private:
 
     // Controllable player movement 
     float m_movementSpeed = 0.0f;
-    float m_turnSpeed = 500.0f;
+    float m_turnSpeed = 100.0f; // set turn speed quite high to allow for easy turning 
     float m_pitch = 0.0f;
     float m_yaw = 0.0f;
     float m_roll = 0.0f;
