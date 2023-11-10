@@ -67,24 +67,17 @@ class SceneModel
 	void RandomDirections();
 
 	// Camera is part of the scene so we can switch between cameras
+	// using boolean
 	void SwitchCamera();
 
 	Camera* m_camera;
-	Camera* m_followCamera;
-
-	columnMajorMatrix objectModelMatrix;
-	Cartesian3 planepos;
-
 	std::vector<Particle*> particles;
 	std::vector<Cartesian3> random_directions;
-	float deltaTime;
-	float oldTime;
-	int lastIndex = 0;
 	QElapsedTimer timer;
 	std::vector<Plane*> planes;
-
 	Plane* m_player;
-
+	float deltaTime;
+	int lastIndex = 0;
 	bool m_switchCamera;
 	
 	}; // class SceneModel

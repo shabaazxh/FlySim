@@ -15,7 +15,7 @@ class Plane
 {
 public:
     // Take in the path to object, starting position, the size of the sphere around the object to detect collision and the role of the object
-    Plane(const char *fileName, const Cartesian3& startPosition, float collisionRadius, const PlaneRole& role);
+    Plane(const char *fileName, const Cartesian3& startPosition, float collisionRadius, bool clockwise, const PlaneRole& role);
     // Collision check functions to check if the plane collides with objects in the scene
     bool isColliding(const Plane& other);
     bool isCollidingWithParticle(const Particle& particle);
@@ -54,6 +54,8 @@ public:
     float flightPathRadius = 3000.0f;
     float angle = 0.0f;
     float speed = 900.0f;
+    float startingAngleOffset;
+    bool m_clockWise;
 
     // Controllable player movement 
     float movementSpeed = 0.0f;

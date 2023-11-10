@@ -1,6 +1,6 @@
 #include "Plane.h"
 
-Plane::Plane(const char *fileName, const Cartesian3& startPosition, float collisionRadius, const PlaneRole& role)
+Plane::Plane(const char *fileName, const Cartesian3& startPosition, float collisionRadius, bool clockwise, const PlaneRole& role)
 {
     planeModel.ReadFileTriangleSoup(fileName);
     // This is for debug to see size of the collision "sphere"
@@ -11,6 +11,7 @@ Plane::Plane(const char *fileName, const Cartesian3& startPosition, float collis
     up = Cartesian3(0, 1, 0);
     collisionSphereRadius = collisionRadius;
     m_planeRole = role;
+    m_clockWise = clockwise;
 }
 
 bool Plane::isColliding(const Plane& other) 
@@ -36,14 +37,16 @@ void Plane::Update(float dt, const columnMajorMatrix& worldMatrix, const columnM
     if(m_planeRole == PlaneRole::Particle)
     {
         Cartesian3 circleCenter = Cartesian3(0, position.y, 0);
-    
+
+        // Take cos and sin to get x and z for the flight path 
         float x = flightPathRadius * cos(angle);
-        float y = flightPathRadius * sin(angle);
+        float z = flightPathRadius * sin(angle);
 
-        auto angularSpeed = speed / flightPathRadius;
+        // auto angularSpeed = speed / flightPathRadius; // to correctly move the plane around using it's speed and radius of circle
+        auto angularSpeed = 0.7f; // setting it to a small value so  the planes move slower. This will allow plane collision to be seen
+        angle += (m_clockWise ? -1 : 1) * angularSpeed * dt; //
 
-        angle += angularSpeed * dt;
-
+        // Ensure angles being used for circular path remain within 0 - 2pi radians
         if(angle > 2 * M_PI)
         {
             angle -= 2 * M_PI;
@@ -53,11 +56,13 @@ void Plane::Update(float dt, const columnMajorMatrix& worldMatrix, const columnM
         {
             angle += 2 * M_PI;
         }
+        // Calculate the next direction based on the previous position and current position
         previousPosition = position;
-        position = circleCenter + Cartesian3(x, 0.0f, y);    
+        position = circleCenter + Cartesian3(x, 0.0f, z);    
         direction = position - previousPosition;
         direction = direction.unit();
-
+        // Construct the rotation look matrix to ensure the plane looks in the correct direction
+        // when flying around the circular flight path
         auto rotationMatrix = columnMajorMatrix::Look(position, position + direction, Cartesian3(0, 1, 0));
 
         // Construct model matrix to apply transformations to the object
@@ -67,8 +72,6 @@ void Plane::Update(float dt, const columnMajorMatrix& worldMatrix, const columnM
         // size increase to see plane: realistic plane size of A320 is about Length: 37 meters, Wingspan 36 meters, Height 12 meters but these values 
         // are too small to see in our game so I have exaggerated the size to make it somewhat visible 
         columnMajorMatrix::Scale(Cartesian3(scale, scale, scale));
-        //columnMajorMatrix::Scale(Cartesian3(1, -1, 1))
-
         sphereMatrix = viewMatrix * columnMajorMatrix::Translate(position) * worldMatrix * columnMajorMatrix::Scale(Cartesian3(4.0f, 4.0f, 4.0f));
     } else 
     {

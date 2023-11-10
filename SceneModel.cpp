@@ -66,10 +66,10 @@ SceneModel::SceneModel(float x, float y, float z)
 
 	// Set up camera position can be anywhere since it will recalculate its position relative to the player plane 
 	m_camera = new Camera(Cartesian3(0.0f, 0.0f, 0.0f), Cartesian3(0.0f,0.0f, -1.0f), CameraMode::Pilot);
-	m_player = new Plane("./models/planeModel.tri", Cartesian3(x, y, z), 200.f, PlaneRole::Controller);
+	m_player = new Plane("./models/planeModel.tri", Cartesian3(x, y, z), 200.f, false, PlaneRole::Controller);
 
-	Plane* plane1 = new Plane("./models/planeModel.tri", Cartesian3(0.0f, 4000.0f, 0.0f), 344.0f, PlaneRole::Particle);
-	Plane* plane2 = new Plane("./models/planeModel.tri", Cartesian3(0.0f, 5000.0f, 0.0f), 344.0f, PlaneRole::Particle);
+	Plane* plane1 = new Plane("./models/planeModel.tri", Cartesian3(0.0f, 4000.0f, 0.0f), 344.0f, true, PlaneRole::Particle);
+	Plane* plane2 = new Plane("./models/planeModel.tri", Cartesian3(0.0f, 4000.0f, 0.0f), 344.0f, false, PlaneRole::Particle);
 	planes.push_back(plane1);
 	planes.push_back(plane2);
 
@@ -125,23 +125,23 @@ void SceneModel::Update()
 		}
 
 		// Set the correct variables for the camera depending on which mode the
-		// Camera is set to
 		if(m_camera->GetCameraMode() == CameraMode::Pilot)
 		{
+			// Since camera is in pilot mode, have camera mimic the plane movement
+			// Set same position, direction and pass yaw, pitch and roll to have camera behave the same
 			m_camera->SetPosition(m_player->position);
 			m_camera->SetDirection(m_player->direction);
 			m_camera->SetRotations(m_player->yaw, m_player->pitch, m_player->roll);
 			m_camera->SetUp(m_player->up);
 		} else {
 			// Get some distance behind the plane and set the camera to look down from above to follow the plane
-
-
-			auto pos = m_player->position - Cartesian3(300.0f, 0.0f, 300.0f);
-			pos.y = pos.y + 2000.0f;
-
+			auto pos = m_player->position - Cartesian3(300.0f, -1000.0f, 300.0f);
+			
+			// Use new position to calculate distance to player 
 			auto dist = m_player->position - pos;
-			dist = dist.unit();
+			dist = dist.unit(); // normalize 
 
+			// Set camera to the new position and direction
 			m_camera->SetPosition(pos);
 			m_camera->SetDirection(dist);
 		}
@@ -210,7 +210,7 @@ void SceneModel::Update()
 			{
 				if(planes[i]->isColliding(*planes[j]))
 				{
-					// std::cout << "Plane collision!" << std::endl;
+					std::cout << "Plane collision!" << std::endl;
 					// planes[i]->shouldRender = false;
 					// planes[j]->shouldRender = false;
 				}
@@ -290,27 +290,22 @@ void SceneModel::Render()
 	glMaterialfv(GL_FRONT, GL_SPECULAR, blackColour);
 	glMaterialfv(GL_FRONT, GL_EMISSION, blackColour);
 
-	// If the third person camera is enabled, render some distance behind the plane
-	// otherwise the plane remains in First person mode
 	columnMajorMatrix playerMatrix;
-
-	// if(m_camera->isThirdPerson())
-	// {
-	// 	auto direction = (m_camera->GetPosition() - m_player->position).unit();
-
-	// 	m_camera->SetDirection(direction);
-	// 	auto newposition = m_player->position  - direction * 3.0f;
-	// 	m_camera->SetPosition(newposition);
-	// }
-	// i think im setting distance from top down camera too not just main camera since there is only one
-	// when it changes to top down, it sets distance for the plane from there
-	float scale = 1.0f;
-	float distance = 3.0f;
-	Cartesian3 offset = m_camera->GetPosition() + m_camera->GetDirection().unit() * distance;
-	playerMatrix = m_camera->GetViewMatrix() * columnMajorMatrix::Translate(offset) * m_player->modelMatrix *
-	WorldMatrix * columnMajorMatrix::Scale(Cartesian3(scale, scale, scale));
-	m_player->planeModel.Render(playerMatrix);
-
+	if(m_camera->GetCameraMode() == CameraMode::Follow)
+	{
+		float scale = 1.0f;
+		Cartesian3 offset = m_camera->GetPosition() + m_camera->GetDirection().unit();
+		playerMatrix = m_camera->GetViewMatrix() * columnMajorMatrix::Translate(offset) * m_player->modelMatrix *
+		WorldMatrix * columnMajorMatrix::Scale(Cartesian3(scale, scale, scale));
+		m_player->planeModel.Render(playerMatrix);
+	} else 
+	{
+		float scale = 1.0f;
+		Cartesian3 offset = m_camera->GetPosition() + m_camera->GetDirection().unit();
+		playerMatrix = m_camera->GetViewMatrix() * columnMajorMatrix::Translate(offset) * m_player->modelMatrix *
+		WorldMatrix * columnMajorMatrix::Scale(Cartesian3(scale, scale, scale));
+		m_player->planeModel.Render(playerMatrix);
+	}
 	glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, lavaBombColour);
 	glMaterialfv(GL_FRONT, GL_SPECULAR, blackColour);
 	glMaterialfv(GL_FRONT, GL_EMISSION, blackColour);
