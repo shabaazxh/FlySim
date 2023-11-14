@@ -34,9 +34,8 @@ const GLfloat planeRadius = 2.0;
 const GLfloat lavaBombRadius = 100.0;
 const Cartesian3 chaseCamVector(0.0, -2.0, 0.5);
 
-// Set up timers so we can incrementally spawn particles in the scene over time
-static auto startTime = std::chrono::high_resolution_clock::now();
-auto lastSpawnTime = std::chrono::high_resolution_clock::now() - std::chrono::seconds(5);
+// Set up timer so we can incrementally spawn particles in the scene over time
+auto lastSpawnTime = std::chrono::high_resolution_clock::now() - std::chrono::seconds(3);
 
 // constructor
 SceneModel::SceneModel(float x, float y, float z)
@@ -67,8 +66,8 @@ SceneModel::SceneModel(float x, float y, float z)
 	m_camera = new Camera(Cartesian3(0.0f, 0.0f, 0.0f), Cartesian3(0.0f,0.0f, -1.0f), CameraMode::Pilot);
 	m_player = new Plane("./models/planeModel.tri", Cartesian3(x, y, z), 200.f, false, PlaneRole::Controller);
 
-	Plane* plane1 = new Plane("./models/planeModel.tri", Cartesian3(0.0f, 4000.0f, 0.0f), 344.0f, true, PlaneRole::AI);
-	Plane* plane2 = new Plane("./models/planeModel.tri", Cartesian3(0.0f, 4000.0f, 0.0f), 344.0f, false, PlaneRole::AI);
+	Plane* plane1 = new Plane("./models/planeModel.tri", Cartesian3(0.0f, 4000.0f, 0.0f), 200.0f, true, PlaneRole::AI);
+	Plane* plane2 = new Plane("./models/planeModel.tri", Cartesian3(0.0f, 4000.0f, 0.0f), 200.0f, false, PlaneRole::AI);
 	planes.push_back(plane1);
 	planes.push_back(plane2);
 
@@ -144,9 +143,9 @@ void SceneModel::Update()
 			m_camera->SetDirection(m_player->GetDirection());
 			m_camera->SetRotations(m_player->GetYaw(), m_player->GetPitch(), m_player->GetRoll());
 			m_camera->SetUp(m_player->GetUp());
-		} else {
+		} else { // If the camera is in follow mode, place the camera above the plane
 			// Get some distance behind the plane and set the camera to look down from above to follow the plane
-			auto position = m_player->GetPostion() - Cartesian3(300.0f, -300.0f, 300.0f);
+			auto position = m_player->GetPostion() - Cartesian3(1.0f, -1.0f, 1.0f);
 			
 			// Use new position to calculate distance to player 
 			auto dist = m_player->GetPostion() - position;
@@ -337,15 +336,9 @@ void SceneModel::Render()
 	glMaterialfv(GL_FRONT, GL_EMISSION, blackColour);
 	columnMajorMatrix playerMatrix;
 
-	// Scale the player object up if the in follow camera otherwise it's incredibly hard to see
-	if(m_camera->GetCameraMode() == CameraMode::Follow) 
-	{
-		m_player->SetScale(72.0f);
-	} else 
-	{
-		m_player->SetScale(1.0f);
-	}
-		
+	// Set scale of the player and use it's model matrix, consisting of it's transformations for 
+	// rendering
+	m_player->SetScale(1.0f);
 	m_player->planeModel.Render(m_player->modelMatrix);
 	
 	// Render lava bombs
