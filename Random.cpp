@@ -76,9 +76,10 @@ Cartesian3 RandomUnitVectorInUpwardsCone(float minimumAngle, float minimumLength
 
 		} // loop until good vector
 
-
+		result = result.unit();
+		// generate random speed from 60m/s to 300m/s
 		float speed = RandomRange(60.0f, 300.0f);
-
+		// apply speed to vector 
 		result = {result.x * speed, result.y * speed, result.z * speed};
 
 		return result;

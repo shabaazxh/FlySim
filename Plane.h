@@ -41,6 +41,7 @@ public:
     void DecreaseSpeed();
     // Set colour of the plane obejct
     void SetColor(float r, float g, float b, float a);
+    void SetPosition(const Cartesian3& newpos);
     
     // Getter for position, direction and up 
     Cartesian3 GetPostion() const { return m_position; }
@@ -70,18 +71,18 @@ private:
     Cartesian3 m_up;
 
     // Properties for AI flying plane's in the world
-    float m_scale = 500.0f; // 73
-    float m_flightPathRadius = 3000.0f;
-    float m_angle = 0.0f;
-    float m_speed = 900.0f;
+    float m_scale; // 73
+    float m_flightPathRadius;
+    float m_angle;
+    float m_speed;
     bool m_clockWise;
 
     // Controllable player movement 
-    float m_movementSpeed = 0.0f;
-    float m_turnSpeed = 100.0f; // set turn speed quite high to allow for easy turning 
-    float m_pitch = 0.0f;
-    float m_yaw = 0.0f;
-    float m_roll = 0.0f;
+    float m_movementSpeed;
+    float m_turnSpeed; // set turn speed quite high to allow for easy turning 
+    float m_pitch;
+    float m_yaw;
+    float m_roll;
 
     float m_collisionSphereRadius = 86.0f; // default collision sphere radius
     float planeColour[4] = {0.5, 0.3, 0.0, 1.0};

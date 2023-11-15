@@ -15,6 +15,7 @@
 #define __RANDOM_H
 
 #include "Cartesian3.h"
+#include <random>
 // generates a single random value in a given range
 float RandomRange(float minimum, float maximum);
 

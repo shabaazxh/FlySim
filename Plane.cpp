@@ -10,6 +10,17 @@ Plane::Plane(const char *fileName, const Cartesian3& startPosition, float collis
     m_collisionSphereRadius = collisionRadius;
     m_planeRole = role;
     m_clockWise = clockwise;
+
+    m_scale = 500.0f; // 73
+    m_flightPathRadius = 3000.0f;
+    m_angle = 0.0f;
+    m_speed = 900.0f;
+
+    m_movementSpeed = 0.0f;
+    m_turnSpeed = 100.0f; // set turn speed quite high to allow for easy turning 
+    m_pitch = 0.0f;
+    m_yaw = 0.0f;
+    m_roll = 0.0f;
 }
 
 // Check if the plane collides with another plane in the scene
@@ -119,6 +130,11 @@ void Plane::SetColor(float r, float g, float b, float a)
     planeColour[2] = b;
     planeColour[3] = a;
 }
+// Setter to set a new position for the plane in the world
+void Plane::SetPosition(const Cartesian3& newpos)
+{
+    m_position = newpos;
+}
 // This function will change the scale of the object 
 void Plane::SetScale(float s)
 {
@@ -128,22 +144,21 @@ void Plane::SetScale(float s)
 // This function will increase the speed of the plane to a maximum of 9 m/s
 void Plane::IncreaseSpeed()
 {
-    m_movementSpeed = std::min(m_movementSpeed + 1.0f, 9.0f); // allow only for a maximum of 9 m/s
-    std::cout << m_movementSpeed << std::endl; // print the current speed so the user knows which speed setting they're on 
+    // movement speed would be plus 500, since terrain is caled by 500 and so 1 meter in scaled terrain is 500 units
+    m_movementSpeed = std::min(m_movementSpeed + 500.0f, 4500.0f); // allow only for a maximum of 4500 m/s = 500*9
 }
 // Decrease the speed of the plane
 // This function will decrease the speed of the plane to a minimum of 0 m/s
 void Plane::DecreaseSpeed()
 {   
-    m_movementSpeed = std::max(m_movementSpeed - 1.0f, 0.0f); // allow only a min of 0 m/s
-    std::cout << m_movementSpeed << std::endl; // print the current speed so the user knows which speed setting they're on 
+    m_movementSpeed = std::max(m_movementSpeed - 500.0f, 0.0f); // allow only a min of 0 m/s
 }
 
 // Controls for the plane
 // This moves the plane in the forward direction
 void Plane::Forward()
 {
-    m_position = m_position + m_movementSpeed * m_direction;
+    m_position = m_position + m_movementSpeed * m_direction * deltaTime;
 }
 // multiplying by deltaTime is used to ensure no matter the frame rate of the game,
 // movement is consisntent on all computers whether they achieve higher frames or not

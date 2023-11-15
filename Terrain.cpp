@@ -122,7 +122,7 @@ float Terrain::getHeight(float x, float y)
 	// retrieve the number of rows and columns of the data
 	long nRows = heightValues.size(), nColumns = heightValues[0].size();
 	
-// 	std::cout << "nRows: " << nRows << " nColumns: " << nColumns << std::endl;
+//	std::cout << "nRows: " << nRows << " nColumns: " << nColumns << std::endl;
 	
 	// Use this to compute the logical size of the map
 	long totalHeight = (nRows - 1) * xyScale;

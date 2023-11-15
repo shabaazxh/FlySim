@@ -22,17 +22,16 @@ public:
     Cartesian3 GetPosition() const { return m_position; }
     Cartesian3 GetDirection() const  { return m_direction; }
     std::vector<Particle*> GetChildren() const { return children; }
-    float GetCollisionSphereRadius() const { return collisionSphereRadius; }
+    float GetCollisionSphereRadius() const { return m_collisionSphereRadius; }
     const float* GetColor() { return lavaBombColour; }
     const float* GetChildColor() { return childSmoke; }
     float GetScale() const { return m_scale; }
-    bool GetShouldRender() const { return shouldRender; }
+    bool GetShouldRender() const { return m_shouldRender; }
 
     // Setters for the particle to change private properties
-    void SetModelMatrix(columnMajorMatrix& mat) { modelMatrix = mat; }
     void SetColor(float r, float g, float b, float a);
     void SetScale(float scale);
-    void SetShouldRender(bool value) { shouldRender = value; }
+    void SetShouldRender(bool value);
     void SetPosition(Cartesian3 position);
     void SetVelocity(Cartesian3 velocity);
 
@@ -44,15 +43,13 @@ private:
     Cartesian3 m_position;
     Cartesian3 m_velocity;
     Cartesian3 m_direction;
-    float mass;
-    //-9.81
-    float gravity;
+    float m_mass;
+    float m_gravity;
     float m_scale = 0.0f;
-    float collisionSphereRadius = 86.0f;
-    float angle = 0.0f;
+    float m_collisionSphereRadius = 86.0f;
+    float m_angle = 0.0f;
     float lavaBombColour[4] = {0.5, 0.3, 0.0, 1.0};
     float childSmoke[4] = {1.0f, 1.0f, 1.0f, 1.0};
-    bool shouldRender;
+    bool m_shouldRender;
     std::vector<Particle*> children;
-    
 };

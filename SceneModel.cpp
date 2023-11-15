@@ -64,7 +64,7 @@ SceneModel::SceneModel(float x, float y, float z)
 
 	// Set up camera position can be anywhere since it will recalculate its position relative to the player plane 
 	m_camera = new Camera(Cartesian3(0.0f, 0.0f, 0.0f), Cartesian3(0.0f,0.0f, -1.0f), CameraMode::Pilot);
-	m_player = new Plane("./models/planeModel.tri", Cartesian3(x, y, z), 200.f, false, PlaneRole::Controller);
+	m_player = new Plane("./models/planeModel.tri", Cartesian3(x, y, z), planeRadius, false, PlaneRole::Controller);
 
 	Plane* plane1 = new Plane("./models/planeModel.tri", Cartesian3(0.0f, 4000.0f, 0.0f), 200.0f, true, PlaneRole::AI);
 	Plane* plane2 = new Plane("./models/planeModel.tri", Cartesian3(0.0f, 4000.0f, 0.0f), 200.0f, false, PlaneRole::AI);
@@ -89,20 +89,26 @@ SceneModel::SceneModel(float x, float y, float z)
 // Release all heap allocated memory used 
 SceneModel::~SceneModel()
 {
+	// Free heap allocated memory for particles
 	for(int i = 0; i < particles.size(); i++)
 	{
 		delete particles[i];
 		particles[i] = nullptr;
 	}
-
+	// Free heap allocated memory for plane AI
 	for(int i = 0; i < planes.size(); i++)
 	{
 		delete planes[i];
 		planes[i] = nullptr;
 	}
 
+	// Free heap allocated memory for the camera
 	delete m_camera;
 	m_camera = nullptr;
+
+	// Free heap allocated memory for player
+	delete m_player;
+	m_player = nullptr;
 }
 
 // Called in the constructor of the SceneModel to set up random directions
@@ -200,7 +206,7 @@ void SceneModel::Update()
 		// Check if the particles impact the ground, if they do, deform the mesh and recompute normals
 		for(auto& particle: particles)
 		{
-			// get height wants x,y but z is up for the terrain in local space
+			// get height wants x,y but z is up for the terrain in object space
 			// impact point y value
 			auto groundMatrix = WorldMatrix * columnMajorMatrix::Scale(Cartesian3(1, -1, 1));
 			// Get the height of the terrain where the particle's position is
@@ -273,7 +279,15 @@ void SceneModel::Update()
 		}
 
 		// Check the players collision with the floor. If they collide, exit the game 
-		if(m_player->isCollidingWithFloor(groundModel.getHeight(m_player->GetPostion().x, m_player->GetPostion().z)))
+		float groundHeight = 0;
+		if((m_player->GetPostion().z <= 24500 && m_player->GetPostion().z >= -24500) && (m_player->GetPostion().x <= 49500 && m_player->GetPostion().x >= -49500))
+		{
+			groundHeight = groundModel.getHeight(m_player->GetPostion().x, m_player->GetPostion().z);
+		} else {
+			m_player->SetPosition(Cartesian3(0,4000,0)); 
+			std::cout << "Don't fly out into no mans land." << std::endl;
+		}
+		if(m_player->isCollidingWithFloor(groundHeight))
 		{
 			std::cout << "You hit the floor and crashed the plane." << std::endl;
 			exit(0);
